@@ -77,3 +77,7 @@ For a real before/after history, use [timeline](timeline.md) on same-scope snaps
 Use `devops-toolkit COMMAND --help` for complete arguments. Every output path must be new; export commands need an existing private parent. POSIX files use mode 0600 and new evidence/proposal directories use 0700; check equivalent protections on your operating system. Internal resource names remain visible. Redaction is best effort. Do not automatically upload live reports.
 
 [Report/export details](reports.md) · [GitOps proposal guide](gitops-proposals.md) · [All commands](toolkit.md)
+
+## If you get stuck
+
+Run `devops-toolkit suggest --issue stuck`, or `devops-toolkit suggest --report private-reports/diagnosis.json` if you saved evidence. It explains possible causes, steps and verification without executing them. See [suggestions](suggestions.md) for supported issues and recovery boundaries.

@@ -9,7 +9,7 @@ import sys
 from .explain import next_step
 
 SUPPORTED = {'diagnosis', 'release-check', 'offline-manifest-check', 'incident-timeline',
-             'drift-report', 'repair-dry-run', 'workload-bundle', 'doctor'}
+             'drift-report', 'repair-dry-run', 'workload-bundle', 'doctor', 'troubleshooting-suggestions'}
 
 
 def clean(value):
@@ -45,16 +45,19 @@ def summarize(document):
         if len(rows) < 500:
             rows.append(dict(status=clean(state), target=clean(target), evidence=clean(evidence),
                              next_step=clean(action), read_only_command=clean(command)))
+    for suggestion in document.get('suggestions', []):
+        add('SUGGESTED', suggestion['topic'], 'Possible causes: ' + ' '.join(suggestion['possible_causes']),
+            ' '.join(str(i) + '. ' + step for i, step in enumerate(suggestion['steps'], 1)) + ' Verify: ' + suggestion['verify'])
     for check in document.get('checks', []):
         advice = next_step(document, check)
         add(check['status'], check.get('resource', check.get('check', 'check')),
             check.get('check', '') + ': ' + check.get('detail', ''),
-            advice['next_step'] if check['status'] != 'PASS' else 'Review the documented scope of this check.')
+            advice['next_step'] + ' More help: ' + advice['suggestion_command'] if check['status'] != 'PASS' else 'Review the documented scope of this check.')
     for finding in document.get('findings', []):
         advice = next_step(document, finding)
         evidence = finding.get('signal', finding.get('message', 'Observed change'))
         # Values from a comparison are intentionally not copied to handover exports.
-        add('OBSERVED', finding.get('resource', ''), evidence, advice['next_step'], advice['read_only_command'])
+        add('OBSERVED', finding.get('resource', ''), evidence, advice['next_step'] + ' More help: ' + advice['suggestion_command'], advice['read_only_command'])
     for entry in document.get('entries', []):
         add(entry.get('event', entry['source']), entry['time'], entry['summary'],
             'Correlated observation; review approved action: ' + str(entry.get('action', 'none recorded')))

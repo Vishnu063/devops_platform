@@ -29,5 +29,6 @@ def next_step(report, finding):
             isinstance(resource, str) and re.fullmatch(r'(pods|deployments)/[a-z0-9][a-z0-9.-]*', resource)):
         command = shlex.join(['kubectl', '--context', context, '--namespace', namespace,
                               '--request-timeout=10s', 'get', resource, '-o', 'wide'])
-    return {'next_step': action, 'read_only_command': command,
+    from .suggest import topic_for
+    return {'suggestion_command': 'devops-toolkit suggest --issue ' + topic_for(key), 'next_step': action, 'read_only_command': command,
             'uncertainty': 'Observed symptoms/configuration do not prove root cause or successful recovery.'}

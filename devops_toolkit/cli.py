@@ -354,7 +354,7 @@ def _main(argv=None):
                "release-check": "release_check", "manifest-check": "manifest_check",
                "drift": "drift", "repair-dry-run": "repair_dry_run", "bundle": "bundle",
                "doctor": "doctor", "guide": "guide", "report": "report", "handover": "handover",
-               "example": "example", "gitops-propose": "gitops_propose"}
+               "example": "example", "gitops-propose": "gitops_propose", "suggest": "suggest"}
     if arguments and arguments[0] in modules:
         from importlib import import_module
         return import_module("." + modules[arguments[0]], __package__).main(arguments[1:])
@@ -375,6 +375,7 @@ def _main(argv=None):
     subcommands.add_parser("repair-dry-run", help="Validate an approved patch using Kubernetes server dry-run")
     subcommands.add_parser("bundle", help="Collect a private ownership-scoped workload troubleshooting bundle")
     for name, help_text in {
+        "suggest": "Suggest investigation, resolution and verification steps without executing them",
         "doctor": "Check prerequisites; cluster authorization queries are opt-in",
         "guide": "Interactively plan a command without executing it",
         "report": "Export saved evidence as local HTML, Markdown or summary JSON",
@@ -456,4 +457,10 @@ def _main(argv=None):
 
 def main(argv=None):
     from .alerts import invoke
-    return invoke(list(sys.argv[1:] if argv is None else argv), _main)
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    code = invoke(arguments, _main)
+    from .suggest import failure_hint
+    hint = failure_hint(arguments, code)
+    if hint:
+        print(hint, file=sys.stderr)
+    return code

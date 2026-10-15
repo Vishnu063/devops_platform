@@ -34,6 +34,19 @@ Open `private-reports/example.html` locally. It explains a **fabricated example*
 
 Existing snapshots, comparisons, timelines, alerts and CI integrations are retained. Reports can show observed changes and scoped repair audit outcomes; they do not infer root cause or business recovery. No ticket, message, PR or deployment is created by these new usability commands. **Installation, runtime behavior and usability remain unverified.**
 
+## Stuck or seeing an error?
+
+Get possible causes, practical checks, resolution guidance and a verification step:
+
+```bash
+devops-toolkit suggest --issue CrashLoopBackOff
+devops-toolkit suggest --issue stuck
+# If you already saved diagnosis evidence:
+devops-toolkit suggest --report private-reports/diagnosis.json
+```
+
+Unsuccessful operational commands also print a help hint. Suggestions **do not execute fixes or prove root cause**. If a repair outcome is uncertain, inspect its audit/live state before retrying. [Supported issues, examples and limits](docs/suggestions.md).
+
 ## Use it in your normal delivery workflow
 
 | Need | Command or integration | What happens |
@@ -166,6 +179,7 @@ Or choose **Actions → Local recovery demo → Run workflow** and select one sc
 
 | Command | Purpose | Changes cluster state? |
 | --- | --- | --- |
+| `suggest` | Possible causes, investigation/resolution steps and verification | No cluster access or automatic action |
 | `doctor` / `guide` | Prerequisite checks / interactive command planning | No; doctor contacts cluster only with explicit context |
 | `example` / `report` / `handover` | Offline learning, readable evidence and handover drafts | No cluster access |
 | `gitops-propose` | Local image-only source proposal for review | No cluster or Git changes |

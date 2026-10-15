@@ -1,5 +1,12 @@
 # Changelog
 
+## Troubleshooting suggestions (unreleased, unverified)
+
+- Offline `suggest` helper for symptoms or existing toolkit reports: possible causes, resolution guidance and verification.
+- Additive diagnosis/report help links and stderr hints after unsuccessful operational commands.
+- No automatic actions, retry, credential collection, network access or guard bypass.
+- README usage and supplied regression cases; tests and runtime behavior remain unexecuted.
+
 ## Usability additions (unreleased, unverified)
 
 - Local prerequisite doctor, opt-in authorization observations and interactive command planner.
