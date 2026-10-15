@@ -1,10 +1,15 @@
 {
   "web": {
     "readinessProbe": {
-      "httpGet": {"path": "/health/ready", "port": 8080},
+      "httpGet": {
+        "path": "/health/ready",
+        "port": 8080,
+        "scheme": "HTTP"
+      },
       "periodSeconds": 5,
       "timeoutSeconds": 2,
-      "failureThreshold": 3
+      "failureThreshold": 3,
+      "successThreshold": 1
     }
   }
 }

@@ -1,0 +1,5 @@
+# Configuration-only rendering input. This digest is an explicit placeholder,
+# not a built/published image and never a live release candidate.
+image:
+  repository: example.invalid/devops-platform
+  digest: sha256:0000000000000000000000000000000000000000000000000000000000000000

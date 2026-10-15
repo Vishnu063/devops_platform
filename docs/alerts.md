@@ -16,7 +16,7 @@ devops-toolkit watch-recovery --policy reports/recovery-policy.local.json \
   --notify-config alerts.local.json
 ```
 
-The same flag works with `recover`, `repair`, `diagnose` and `release-check`. Invalid notification configuration prevents the operation from starting. Configuration validation does not test delivery. No notification is sent for other commands or unless the flag is supplied.
+The same flag works with `recover`, `repair`, `diagnose`, `release-check`, `manifest-check`, `drift`, `bundle` and `repair-dry-run`. Invalid notification configuration prevents the operation from starting. Configuration validation does not test delivery. No notification is sent for other commands or unless the flag is supplied.
 
 Only a fixed outcome record is sent: random event ID, timestamp, tool name, command, result label and exit code. It excludes context/namespace, resource identity, UIDs, policy details, reports, logs, stdout and webhook URLs. The event ID is also printed to the local command stderr so the receiver message can be correlated with that runner output. No report is automatically uploaded.
 

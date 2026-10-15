@@ -22,7 +22,7 @@ Read [the demo guide](demo.md). Four disposable scenarios demonstrate image, sel
 
 ## Install and navigate
 
-Follow [README](../README.md) to install the console CLI from source, or use `python -m devops_toolkit` from the repository. No PyPI package is published. The toolkit uses Python 3.12+ standard library; kubectl/Docker requirements depend on the command. The Flask API is a separate delivery target with its own dependencies.
+Follow [README](../README.md) to install the console CLI from source, or use `python -m devops_toolkit` from the repository. No PyPI package is published. Optional YAML/Helm input uses `pip install '.[yaml]'`; base JSON operation stays standard-library-only. The toolkit uses Python 3.12+ standard library; kubectl/Docker requirements depend on the command. The Flask API is a separate delivery target with its own dependencies.
 
 | Need | Guide |
 | --- | --- |
@@ -34,3 +34,7 @@ Follow [README](../README.md) to install the console CLI from source, or use `py
 | Contribute or report a bug | [Contributing](../CONTRIBUTING.md), [security](../SECURITY.md) |
 
 All new installation, tests, demos, alert delivery and live recovery remain unrun. Code presence is not production validation. No automation is installed or enabled by reading these guides or generating a policy.
+
+## In an existing delivery pipeline
+
+Use [manifest input](manifest-input.md) for existing YAML/JSON or a local chart. The new [automatic CI job](ci-integration.md) adds offline reports to PR Checks without credentials. Trusted connected checks remain opt-in. For investigation, use [drift](drift.md), [server-side repair validation](dry-run.md) and [workload bundles](bundle.md). This update deliberately skips CI execution; future matching events can run the configured automatic job.

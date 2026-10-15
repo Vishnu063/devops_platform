@@ -46,3 +46,7 @@ Use [timeline](timeline.md) for correlated evidence and [alerts](alerts.md) for 
 ## Compatibility and evidence
 
 See [compatibility](compatibility.md) and [CHANGELOG](../CHANGELOG.md). All new behavior remains unexecuted for this revision. No production-readiness claim or service-level support promise is made.
+
+## New non-persisting investigation commands
+
+`manifest-check` is offline. `drift` and `bundle` read an explicit cluster; bundle additionally needs ReplicaSet list access. `repair-dry-run` submits only a server dry-run patch and still needs write RBAC and the original policy/stop guards. No latch is persisted by validation. Keep raw bundles and connected reports outside public CI artifacts. [CI integration](ci-integration.md) documents the opt-in private live runner and the separate credential-free automatic workflow.

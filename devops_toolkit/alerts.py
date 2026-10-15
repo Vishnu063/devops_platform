@@ -34,7 +34,7 @@ def prepare(path):
 
 def outcome(command, code, args):
     result = 'completed' if code == 0 else 'needs_attention' if code == 1 else 'failed_or_unknown'
-    if command in {'release-check', 'diagnose'} and code in {1, 2}:
+    if command in {'release-check', 'diagnose', 'drift', 'bundle', 'repair-dry-run', 'manifest-check'} and code in {1, 2}:
         result = 'needs_attention'
     if '--execute' not in args and command in {'recover', 'repair', 'watch-recovery'}:
         result = 'preview_completed' if code == 0 else result
@@ -88,7 +88,7 @@ def invoke(arguments, runner):
             raise ValueError('Use one --notify-config path')
         path = args[index + 1]
         del args[index:index + 2]
-        if not args or args[0] not in {'recover', 'repair', 'watch-recovery', 'release-check', 'diagnose'}:
+        if not args or args[0] not in {'recover', 'repair', 'watch-recovery', 'release-check', 'diagnose', 'drift', 'bundle', 'repair-dry-run', 'manifest-check'}:
             raise ValueError('Notifications are supported only for operational commands')
         config = prepare(path)  # Validate before allowing an operation to start.
     except (OSError, ValueError, TypeError, KeyError):

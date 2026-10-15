@@ -165,15 +165,15 @@ def preflight(kube, args):
     checks = []
     kube.get("namespace", args.namespace)
     check_record(checks, "PASS", "namespace", "Target namespace exists")
-    if args.file:
-        if Path(args.file).stat().st_size > MAX_OUTPUT:
-            raise ValueError("manifest file is too large")
-        document = json.loads(Path(args.file).read_text())
-        candidates = document.get("items", []) if document.get("kind") == "List" else [document]
+    if args.file or getattr(args, "chart", None):
+        from .manifests import source_document
+        document = source_document(args)
+        candidates = document["items"]
         matches = [d for d in candidates if d.get("kind") == "Deployment"
-                   and d.get("metadata", {}).get("name") == args.deployment]
+                   and d.get("metadata", {}).get("name") == args.deployment
+                   and d.get("metadata", {}).get("namespace", args.namespace) == args.namespace]
         if len(matches) != 1:
-            raise ValueError("JSON must contain exactly one matching Deployment")
+            raise ValueError("Manifest input must contain exactly one matching Deployment in the target namespace")
         deployment = matches[0]
         if deployment.get("metadata", {}).get("namespace", args.namespace) != args.namespace:
             raise ValueError("manifest namespace differs from --namespace")
@@ -243,7 +243,7 @@ def preflight(kube, args):
                  "Estimate is for one pod; affinity, topology, volumes, quotas, ports and full rollout are not simulated")
     check_record(checks, "WARN", "admission", "Admission policies and signatures are not evaluated by this tool")
     return {"checks": checks, "deployment": args.deployment,
-            "configuration_source": "local JSON" if args.file else "live Deployment"}
+            "configuration_source": "local manifest/Helm render" if args.file or getattr(args, "chart", None) else "live Deployment"}
 
 
 def safe_image(value):
@@ -351,7 +351,8 @@ def _main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
     modules = {"diagnose": "diagnose", "recover": "recovery", "watch-recovery": "watch_recovery",
                "repair": "repair", "demo": "demo", "policy": "policy", "timeline": "timeline",
-               "release-check": "release_check"}
+               "release-check": "release_check", "manifest-check": "manifest_check",
+               "drift": "drift", "repair-dry-run": "repair_dry_run", "bundle": "bundle"}
     if arguments and arguments[0] in modules:
         from importlib import import_module
         return import_module("." + modules[arguments[0]], __package__).main(arguments[1:])
@@ -367,6 +368,10 @@ def _main(argv=None):
     subcommands.add_parser("policy", help="Create private repair policy from live UIDs and your approved fix")
     subcommands.add_parser("timeline", help="Correlate saved snapshots and scoped repair audits offline")
     subcommands.add_parser("release-check", help="Explain image, config, capacity, Service, availability and recovery risks")
+    subcommands.add_parser("manifest-check", help="Check YAML/JSON/Helm configuration offline for CI")
+    subcommands.add_parser("drift", help="Compare desired manifest fields with live Deployment/Service state")
+    subcommands.add_parser("repair-dry-run", help="Validate an approved patch using Kubernetes server dry-run")
+    subcommands.add_parser("bundle", help="Collect a private ownership-scoped workload troubleshooting bundle")
     for name in ("preflight", "incident"):
         command = subcommands.add_parser(name, help=(
             "Check deployment configuration" if name == "preflight"
@@ -376,7 +381,8 @@ def _main(argv=None):
         command.add_argument("--output", help="New private JSON file (preflight) or new directory (incident)")
         if name == "preflight":
             command.add_argument("--deployment", default="platform")
-            command.add_argument("--file", help="Desired Deployment or List in JSON, otherwise inspect live deployment")
+            from .manifests import source_arguments
+            source_arguments(command)
             command.add_argument("--verify-images", action="store_true")
         else:
             command.add_argument("--include-logs", action="store_true")

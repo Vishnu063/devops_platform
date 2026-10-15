@@ -4,7 +4,22 @@
 
 Use this when you are about to deploy and want one readable answer to: **what is missing, what could reduce availability, and what recovery is actually approved?** During an incident, collect evidence and build a timeline rather than repeating the same investigation commands.
 
-**Status: development version `0.2.0.dev0`.** Features, regression cases and demo workflows are included. Tests, package installation/build, scanners, notification delivery and live recovery have **not been run** for this revision. Nothing is deployed or enabled. This is not a production-validated auto-healer.
+**Status: development version `0.3.0.dev0`.** Features, regression cases and demo workflows are included. Tests, package installation/build, scanners, notification delivery and live recovery have **not been run** for this revision. Nothing is deployed or enabled. This is not a production-validated auto-healer.
+
+## Use it in your normal delivery workflow
+
+| Need | Command or integration | What happens |
+| --- | --- | --- |
+| Automatic pull-request feedback | **Toolkit configuration checks** GitHub workflow | Offline regression/configuration checks, PR check summary and report artifact; no cluster credentials |
+| Existing YAML or Helm chart | `manifest-check` / `release-check --file` or `--chart` | Direct YAML/JSON input or bounded local Helm rendering |
+| Explain Git-versus-cluster drift | `drift` | Changed desired-field paths; values are redacted and nothing is reconciled |
+| Validate a repair without saving it | `repair-dry-run` | Kubernetes server-side dry-run of the approved patch; no persisted latch or rollout |
+| Troubleshoot one application | `bundle` | Private evidence selected through Deployment → ReplicaSet → Pod ownership |
+| Trusted live CI gate | Optional Jenkins stage | Explicit context, approved credential and private report destination; disabled by default |
+
+Automatic offline checks are configured for future matching PRs/main pushes. **This update is marked `[skip ci]` to honor the instruction not to run anything yet. No successful CI run is claimed.** Existing image publication, security/release gates and deployment approvals remain separate and manual.
+
+[CI/CD integration and trust boundaries](docs/ci-integration.md) · [YAML/Helm input](docs/manifest-input.md)
 
 ## Why a DevOps engineer would use it
 
@@ -26,10 +41,10 @@ From this repository, using Python 3.12 or later:
 ```bash
 python -m venv .venv
 . .venv/bin/activate
-python -m pip install .
+python -m pip install '.[yaml]'
 ```
 
-Then use `devops-toolkit ...`. Installation is supplied as source configuration and remains unverified; no package is published to PyPI. All commands also work from the repository as `python -m devops_toolkit ...`, without installing the CLI package. The toolkit has no third-party Python runtime dependencies. Cluster reads need kubectl; image checks need Docker.
+Then use `devops-toolkit ...`. Installation is supplied as source configuration and remains unverified; no package is published to PyPI. All commands also work from the repository as `python -m devops_toolkit ...`, without installing the CLI package. The base JSON CLI uses the standard library; the optional YAML extra installs pinned PyYAML. Cluster reads need kubectl; image checks need Docker; direct chart input needs local Helm.
 
 ## A practical workflow
 
@@ -39,10 +54,10 @@ Then use `devops-toolkit ...`. Installation is supplied as source configuration 
 mkdir -p reports
 devops-toolkit release-check --context YOUR_CONTEXT --namespace platform \
   --deployment YOUR_DEPLOYMENT --service YOUR_SERVICE \
-  --file candidate.local.json --output reports/release-check.json
+  --file k8s/release.yaml --output reports/release-check.json
 ```
 
-Input is a Deployment JSON or Kubernetes List JSON. Omit `--file` to inspect the live Deployment. Supply `--policy` if you have a reviewed recovery approval. Helm/YAML rendering stays in your existing toolchain. [Read the six checks and limits](docs/release-check.md).
+Input can be JSON, multi-document Kubernetes YAML or a trusted local Helm chart. Omit `--file` to inspect the live Deployment. Supply `--policy` if you have a reviewed recovery approval. Use `--chart ./charts/my-app --release my-app --values values/staging.yaml` instead of `--file` for local Helm rendering. [Read the six checks and limits](docs/release-check.md).
 
 ### 2. Generate a policy without copying IDs or hashes
 
@@ -80,6 +95,30 @@ The timeline shows observed symptoms, differences and scoped repair events. It d
 
 Add `--notify-config alerts.local.json` to an operational command. Configure Slack, Teams or a generic HTTPS receiver through a secret environment variable. Nothing is sent by default; sensitive reports and target identities are excluded from notifications. [Alert setup and delivery limits](docs/alerts.md).
 
+## More everyday commands
+
+```bash
+# Offline configuration only: no live registry, Secret or capacity claims.
+devops-toolkit manifest-check --file k8s/release.yaml --namespace platform \
+  --output reports/configuration.json
+
+# Compare desired fields to an explicitly selected live cluster.
+devops-toolkit drift --context YOUR_CONTEXT --namespace platform \
+  --file k8s/release.yaml --output reports/drift.json
+
+# Ask the server to validate one approved repair without persisting it.
+devops-toolkit repair-dry-run --policy reports/recovery-policy.local.json \
+  --output reports/repair-dry-run.json
+
+# Gather private evidence for this Deployment only; logs are off by default.
+devops-toolkit bundle --context YOUR_CONTEXT --namespace platform \
+  --deployment YOUR_DEPLOYMENT --output reports/workload-UNIQUE-ID
+```
+
+Use a new output file/directory and an existing private report parent. All these commands are read-only or non-persisting validation. A server dry-run still contacts the cluster and requires patch RBAC. Do not upload connected-cluster reports or bundles automatically.
+
+[Drift scope](docs/drift.md) · [Dry-run behavior](docs/dry-run.md) · [Bundle contents and privacy](docs/bundle.md)
+
 ## See a repair on a disposable local cluster later
 
 The code includes four scenarios:
@@ -99,11 +138,14 @@ Or choose **Actions → Local recovery demo → Run workflow** and select one sc
 
 | Command | Purpose | Changes cluster state? |
 | --- | --- | --- |
-| `release-check` | Six checks and one readable decision | No |
+| `manifest-check` | Offline rendered configuration feedback for CI | No cluster access |
+| `release-check` | Six live/candidate checks and one readable decision | No |
 | `preflight` | Detailed configuration/reference/capacity checks | No |
 | `diagnose` | Workload symptoms and suggested next actions | No |
 | `policy create` / `policy check` | Generate private approval / validate offline | No |
-| `incident` | Save a private namespace snapshot | No |
+| `incident` / `bundle` | Namespace snapshot / ownership-scoped workload evidence | No |
+| `drift` | Desired-versus-live field paths | No |
+| `repair-dry-run` | Server-side approved patch validation | No persisted changes |
 | `compare` / `timeline` | Compare/correlate saved evidence offline | No |
 | `recover` / `watch-recovery` | One approved image repair | Only with `--execute` |
 | `repair` | Approved container, selector or replica correction | Only with `--execute` |
@@ -129,7 +171,7 @@ flowchart TD
   H --> I["Kubernetes and monitoring"]
 ```
 
-CI stays manual until initial validation is complete. A check-only run does not publish. A release run requires SonarQube and Snyk to pass before the saved image is published. Missing credentials stop the release.
+The image/security/publication flow stays manual until initial validation is complete; automatic offline toolkit checks are configured separately. A check-only run does not publish. A release run requires SonarQube and Snyk to pass before the saved image is published. Missing credentials stop the release.
 
 ## Run locally
 

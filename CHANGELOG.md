@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased — 0.2.0.dev0
+## Unreleased — 0.3.0.dev0
+
+- Safe multi-document YAML/JSON input and bounded local Helm rendering with optional pinned YAML dependency.
+- Automatic offline toolkit/configuration PR/main checks with job summary and narrowly scoped report artifacts.
+- Shared Jenkins offline stage and explicit opt-in live release-check gate with private output handling.
+- Desired-versus-live drift reports that omit field values.
+- Server-side approved-repair dry-run without persisting a latch or patch.
+- Ownership-scoped workload bundles with opt-in bounded logs.
+
+This revision is code/documentation only. It is committed with `[skip ci]`; tests, package install/build, scanners, chart rendering, workflow jobs, cluster queries/patches, notifications and deployments remain unrun. Live CI setup and repository protection are operator responsibilities.
+
+## Previous development snapshot — 0.2.0.dev0
 
 - Installable `devops-toolkit` console command with no third-party Python runtime dependencies.
 - Policy creation from live UIDs/spec hashes and an explicit approved correction; offline policy validation.

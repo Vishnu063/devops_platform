@@ -61,3 +61,5 @@ devops-toolkit watch-recovery --policy reports/recovery-policy.local.json \
 For the other actions, use `repair` with the matching generated policy. Preview is the default; no policy is enabled just by creating it. See [emergency stop and permissions](operations.md).
 
 Exit codes: `0` valid/generated, `2` refusal/error. Generation and offline validation do not perform cluster mutations or send alerts.
+
+You can additionally run [repair-dry-run](dry-run.md) to ask Kubernetes to validate the approved correction without persisting a patch. It does not replace the live checks or failed-rollout conditions required for actual execution.

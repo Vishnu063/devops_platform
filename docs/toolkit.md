@@ -13,7 +13,7 @@ It runs on your machine using Python. Preflight, incident collection and diagnos
 
 ## What you need
 
-- Python 3.12 on Linux. The CLI itself uses only the standard library.
+- Python 3.12 on Linux. Base JSON operation uses the standard library; YAML input requires the optional PyYAML extra.
 - kubectl installed and connected to a cluster you are allowed to inspect.
 - The correct context name. List names with `kubectl config get-contexts -o name`.
 - Optional: Docker and registry login if you want to check whether images are accessible.
@@ -180,3 +180,7 @@ Run `python -m devops_toolkit demo` after installing local Docker, kind and kube
 ## Unified release workflow and new commands
 
 Start with [release-check](release-check.md) for the six deployment questions. Use [policy create](policies.md) to fill live UIDs/hashes from an explicit known correction, [timeline](timeline.md) to correlate snapshots/audits, and [alerts](alerts.md) for opt-in outcome delivery. Install the console command with the README instructions or use `python -m devops_toolkit`. Read [operations](operations.md) for stop controls and permissions. No new commands have been executed in this revision.
+
+## CI/CD and native manifest inputs
+
+`preflight` and `release-check` now accept multi-document YAML and local Helm charts as well as JSON. See [input setup](manifest-input.md). `manifest-check` performs separate offline checks for automatic PR feedback. [CI integration](ci-integration.md) explains automatic versus trusted live jobs. [Drift](drift.md), [repair-dry-run](dry-run.md) and [bundle](bundle.md) provide read-only/non-persisting troubleshooting paths. No command has been run during this revision.

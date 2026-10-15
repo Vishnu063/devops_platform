@@ -1,0 +1,63 @@
+name: Toolkit configuration checks
+on:
+  pull_request:
+    paths:
+      - devops_toolkit/**
+      - tests/**
+      - charts/**
+      - ci/**
+      - pyproject.toml
+      - .github/workflows/toolkit-checks.yml
+      - README.md
+      - docs/**
+  push:
+    branches: [main]
+    paths:
+      - devops_toolkit/**
+      - tests/**
+      - charts/**
+      - ci/**
+      - pyproject.toml
+      - .github/workflows/toolkit-checks.yml
+      - README.md
+      - docs/**
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: toolkit-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline:
+    name: Offline toolkit and manifest checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install toolkit and optional YAML support
+        run: |
+          python3 -m venv .venv-toolkit
+          .venv-toolkit/bin/python -m pip install '.[yaml]'
+      - name: Check toolkit and rendered configuration without a cluster
+        env:
+          TOOLKIT_PYTHON: .venv-toolkit/bin/python
+        run: bash ci/offline-checks.sh
+      - name: Add configuration report to the check summary
+        if: always()
+        run: |
+          if [ -f reports/offline-summary.md ]; then
+            cat reports/offline-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'No complete configuration report. Inspect the failed step.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: toolkit-configuration-report
+          path: |
+            reports/offline-check.json
+            reports/offline-summary.md
+          if-no-files-found: warn
+          retention-days: 7

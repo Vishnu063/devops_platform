@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "devops-platform-toolkit"
-version = "0.2.0.dev0"
+version = "0.3.0.dev0"
 description = "Evidence-based Kubernetes release checks and explicitly approved recovery"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -15,6 +15,9 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: System :: Systems Administration",
 ]
+
+[project.optional-dependencies]
+yaml = ["PyYAML==6.0.3"]
 
 [project.scripts]
 devops-toolkit = "devops_toolkit.cli:main"

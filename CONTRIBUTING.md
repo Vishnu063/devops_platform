@@ -4,12 +4,12 @@ Start with an issue describing the engineer's problem, minimal sanitized inputs 
 
 ## Local development
 
-Use Python 3.12 or later. The toolkit runtime has no third-party Python dependencies. The Flask delivery target has its own requirements files. Installation and test instructions are provided for contributors; they have not been executed as part of this revision.
+Use Python 3.12 or later. Base JSON operation uses the standard library. YAML and local Helm rendering require the optional pinned PyYAML extra. The Flask delivery target has its own requirements files. Installation and test instructions are provided for contributors; they have not been executed as part of this revision.
 
 ```bash
 python -m venv .venv
 . .venv/bin/activate
-python -m pip install -e .
+python -m pip install -e '.[yaml]'
 python -m unittest discover -s tests -p 'test_product.py' -v
 ```
 
@@ -34,3 +34,7 @@ Use the issue and pull-request templates. Security findings should follow [SECUR
 ## Project status
 
 This is an unvalidated development version. No release tag, package registry publication, successful live-drill result or production support promise is implied. Dependency, integration and Kubernetes compatibility still need execution evidence.
+
+## Pipeline and manifest-input changes
+
+The automatic offline toolkit workflow runs on future matching PR/main events without credentials and checks rendered configuration only. Keep live cluster identity/credentials out of untrusted PR jobs and raw manifests/bundles out of public artifacts. Add mocked cases to `tests/test_ci_tools.py` for parser, drift, dry-run and bundle changes. Use `[skip ci]` only when explicitly deferring execution; a skipped check is not passing evidence. This revision is intentionally unexecuted.

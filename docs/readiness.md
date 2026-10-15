@@ -35,3 +35,7 @@ Do not label a deployment production-ready until these checks pass in the chosen
 ## Toolkit usability revision (unexecuted)
 
 Source adds an installable CLI, policy generation, combined release checks, offline timelines, opt-in alerts, stop controls and four local demo scenarios. Installation/build, unit tests, real notifications, permissions, live Kubernetes compatibility and all scenario runs remain pending. See [compatibility](compatibility.md) and [CHANGELOG](../CHANGELOG.md). This revision did not run tests, demos, scanners, workflows, builds or deployments.
+
+## CI/CD input and investigation revision (unexecuted)
+
+Source adds direct YAML/Helm input, future automatic offline PR checks, an opt-in trusted Jenkins live gate, redacted drift paths, server-side repair dry-run and ownership-scoped bundles. Current publication deliberately uses `[skip ci]`; no tests, builds, CLI commands, pipeline jobs, cluster calls or notifications were executed. Credentials, branch protection and trusted live runner setup are not configured by repository files alone.

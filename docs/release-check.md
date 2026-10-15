@@ -5,13 +5,13 @@
 ```bash
 devops-toolkit release-check --context YOUR_CONTEXT --namespace platform \
   --deployment YOUR_DEPLOYMENT --service YOUR_SERVICE \
-  --file candidate.local.json --policy reports/recovery-policy.local.json \
+  --file candidate.yaml --policy reports/recovery-policy.local.json \
   --output reports/release-check.json
 ```
 
 Create `reports/` first. Omit `--file` to inspect an existing live Deployment instead of a proposed change. Use `--service` to identify the intended Service; a same-named Service inside the candidate List takes precedence over its live version. Avoid checking unrelated Services from a multi-application List as if they belonged to this Deployment.
 
-Input is one **Deployment JSON** or a Kubernetes **List JSON** containing exactly one matching Deployment and the intended Service. Namespace must match. YAML parsing, Helm rendering and server-side admission are not implemented here. Render your Helm values/manifests through your existing reviewed toolchain and export JSON first; the toolkit does not execute Helm or chart hooks for you.
+Input is JSON, multi-document Kubernetes YAML, or a trusted local Helm chart. It must contain exactly one matching Deployment and the intended Service; namespace must match. Use `--chart`, `--release`, repeatable `--values` and `--set` instead of `--file` for bounded local `helm template` rendering. Install the optional YAML extra first. See [manifest input](manifest-input.md). Hooks are not executed and server admission is not part of release-check.
 
 ## Six practical questions
 
@@ -38,3 +38,7 @@ A policy for a Service is not a rollback policy for a Deployment. The release-ch
 Fixed scope limits are always visible as NOTE/limitations, even when checks pass. Collection is not atomic. Capacity and configuration can change immediately after the report. No scanner, admission, rollout or real traffic test is executed by this command.
 
 Permissions are described in [operations](operations.md). Missing namespace-wide capacity or Secret access can result in incomplete checks; do not grant cluster-admin simply to remove UNKNOWN results. Code and regression cases are included; execution and live validation remain pending.
+
+## Pipeline and investigation integration
+
+[Automatic offline CI](ci-integration.md) reports configuration checks separately from live readiness. [Drift](drift.md) explains desired/live field differences, [server dry-run](dry-run.md) validates an approved repair without saving it, and [workload bundles](bundle.md) collect scoped incident evidence. These additions remain unexecuted for this revision.

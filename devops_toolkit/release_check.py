@@ -7,7 +7,8 @@ from pathlib import Path
 import re
 import sys
 
-from .policy import read_json, validate_file
+from .policy import validate_file
+from .manifests import source_arguments, source_document
 from .recovery import fingerprint
 
 
@@ -124,8 +125,8 @@ def run(kube, args):
         live = kube.get('deployment', args.deployment)
     except QueryError:
         pass
-    if args.file:
-        candidate, objects = select_deployment(read_json(args.file, 8 * 1024 * 1024), args.deployment, args.namespace)
+    if args.file or getattr(args, 'chart', None):
+        candidate, objects = select_deployment(source_document(args), args.deployment, args.namespace)
     elif live:
         candidate, objects = live, []
     else:
@@ -184,7 +185,7 @@ def main(argv=None):
     parser.add_argument('--context', required=True)
     parser.add_argument('--namespace', default='platform')
     parser.add_argument('--deployment', default='platform')
-    parser.add_argument('--file', help='Deployment JSON or Kubernetes List JSON; render Helm YAML to JSON first')
+    source_arguments(parser)
     parser.add_argument('--service', help='Existing Service name, or a Service name in the supplied List')
     parser.add_argument('--policy', help='Optional existing approval policy, checked without executing it')
     parser.add_argument('--skip-image-check', action='store_true', help='Explicitly skip registry access; result requires review')
