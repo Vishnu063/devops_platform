@@ -1,5 +1,15 @@
 # Changelog
 
+## Usability additions (unreleased, unverified)
+
+- Local prerequisite doctor, opt-in authorization observations and interactive command planner.
+- Clearly fabricated offline examples for crash, image and selector investigation.
+- Readable diagnosis/release/configuration output; explicit evidence, uncertainty and safe next reads.
+- Standalone private HTML/Markdown/JSON evidence summaries and handover drafts.
+- Local image-only GitOps source review bundles; no commit, PR, apply or reconciliation.
+- Beginner walkthrough and README task map; supplied usability regression cases for future CI.
+- Code-only update: tests, installs, runtime commands, builds, notifications and deployments were not run.
+
 ## Unreleased — 0.3.0.dev0
 
 - Safe multi-document YAML/JSON input and bounded local Helm rendering with optional pinned YAML dependency.

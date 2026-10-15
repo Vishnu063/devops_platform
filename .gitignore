@@ -27,3 +27,6 @@ dist/
 *.local.json
 
 .venv-*/
+
+# Private diagnosis, exports and source proposals
+private-reports/

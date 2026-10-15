@@ -78,6 +78,7 @@ def main(argv=None):
     parser.add_argument("--namespace", default="platform")
     parser.add_argument("--include-nodes", action="store_true", help="Optional cluster-wide node read")
     parser.add_argument("--output", help="New private JSON file")
+    parser.add_argument('--format', choices=['json', 'text'], default='json', help='Readable text or existing JSON output')
     args = parser.parse_args(argv)
     if not args.context.strip() or args.context.startswith("-") or not re.fullmatch(r"[a-z0-9](?:[-a-z0-9]*[a-z0-9])?", args.namespace):
         parser.error("Use an explicit context and valid namespace")
@@ -98,11 +99,15 @@ def main(argv=None):
             report["findings"].extend(findings_for(resource, items))
         except (QueryError, KeyError, TypeError, AttributeError):
             report["unavailable"].append(resource)
+    from .explain import next_step
+    for finding in report['findings']:
+        finding.update(next_step(report, finding))
     try:
         if args.output:
             write_private(Path(args.output), json.dumps(report, indent=2) + "\n")
     except OSError:
         print("Cannot save report: use a new output file with an existing parent directory.", file=sys.stderr)
         return 2
-    print(json.dumps(report, indent=2))
+    from .report import console
+    print(console(report) if args.format == 'text' else json.dumps(report, indent=2, ensure_ascii=True))
     return 2 if report["unavailable"] else 1 if report["findings"] else 0

@@ -1,5 +1,9 @@
 # Start with the engineer's task
 
+New here? Follow [the short offline walkthrough](easy-start.md). Start with `doctor`, explore a fabricated `example`, and open a local HTML `report`. `guide` plans commands interactively without running them.
+
+Export saved evidence with [report/handover](reports.md), or prepare an image-only [GitOps source proposal](gitops-proposals.md) for review.
+
 ## Before a deployment
 
 Use [release-check](release-check.md). It checks image access, required live configuration, estimated capacity, Service matching, availability risks and recovery approval. It returns BLOCKED, NEEDS_REVIEW or CHECKS_PASSED with reasons. It does not deploy or guarantee success.

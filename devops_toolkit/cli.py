@@ -352,7 +352,9 @@ def _main(argv=None):
     modules = {"diagnose": "diagnose", "recover": "recovery", "watch-recovery": "watch_recovery",
                "repair": "repair", "demo": "demo", "policy": "policy", "timeline": "timeline",
                "release-check": "release_check", "manifest-check": "manifest_check",
-               "drift": "drift", "repair-dry-run": "repair_dry_run", "bundle": "bundle"}
+               "drift": "drift", "repair-dry-run": "repair_dry_run", "bundle": "bundle",
+               "doctor": "doctor", "guide": "guide", "report": "report", "handover": "handover",
+               "example": "example", "gitops-propose": "gitops_propose"}
     if arguments and arguments[0] in modules:
         from importlib import import_module
         return import_module("." + modules[arguments[0]], __package__).main(arguments[1:])
@@ -372,6 +374,15 @@ def _main(argv=None):
     subcommands.add_parser("drift", help="Compare desired manifest fields with live Deployment/Service state")
     subcommands.add_parser("repair-dry-run", help="Validate an approved patch using Kubernetes server dry-run")
     subcommands.add_parser("bundle", help="Collect a private ownership-scoped workload troubleshooting bundle")
+    for name, help_text in {
+        "doctor": "Check prerequisites; cluster authorization queries are opt-in",
+        "guide": "Interactively plan a command without executing it",
+        "report": "Export saved evidence as local HTML, Markdown or summary JSON",
+        "handover": "Create a private incident handover draft from saved evidence",
+        "example": "Write a fabricated offline troubleshooting example",
+        "gitops-propose": "Create a local image-only source change proposal for review",
+    }.items():
+        subcommands.add_parser(name, help=help_text)
     for name in ("preflight", "incident"):
         command = subcommands.add_parser(name, help=(
             "Check deployment configuration" if name == "preflight"

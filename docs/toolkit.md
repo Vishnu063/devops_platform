@@ -184,3 +184,9 @@ Start with [release-check](release-check.md) for the six deployment questions. U
 ## CI/CD and native manifest inputs
 
 `preflight` and `release-check` now accept multi-document YAML and local Helm charts as well as JSON. See [input setup](manifest-input.md). `manifest-check` performs separate offline checks for automatic PR feedback. [CI integration](ci-integration.md) explains automatic versus trusted live jobs. [Drift](drift.md), [repair-dry-run](dry-run.md) and [bundle](bundle.md) provide read-only/non-persisting troubleshooting paths. No command has been run during this revision.
+
+## Friendly entry points and exports
+
+Use [the short walkthrough](easy-start.md) for `doctor`, `guide` and fabricated offline `example` scenarios. [Reports](reports.md) covers standalone HTML, Markdown, summary JSON and incident handover drafts. `diagnose`, `release-check` and `manifest-check` accept `--format text`; their original JSON output remains the default.
+
+[GitOps proposals](gitops-proposals.md) creates a local image-only source patch/review bundle. No PR, commit or reconciliation is performed; existing direct-repair ownership guards remain in force. All new behavior and regression cases remain unexecuted.

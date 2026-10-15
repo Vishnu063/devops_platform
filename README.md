@@ -6,6 +6,34 @@ Use this when you are about to deploy and want one readable answer to: **what is
 
 **Status: development version `0.3.0.dev0`.** Features, regression cases and demo workflows are included. Tests, package installation/build, scanners, notification delivery and live recovery have **not been run** for this revision. Nothing is deployed or enabled. This is not a production-validated auto-healer.
 
+## Start here — no cluster needed
+
+Get a readable result before connecting any infrastructure:
+
+```bash
+# After the source installation below:
+devops-toolkit doctor
+mkdir -m 700 private-reports
+devops-toolkit example --scenario crash --output private-reports/example.json
+devops-toolkit report private-reports/example.json --output private-reports/example.html
+```
+
+Open `private-reports/example.html` locally. It explains a **fabricated example**, evidence and next steps. Nothing contacts a cluster or performs a repair. Use `devops-toolkit guide` for an interactive command planner; it prints a command for review and never executes it.
+
+**[Follow the short walkthrough](docs/easy-start.md)** · [Reports and handovers](docs/reports.md) · [GitOps proposals](docs/gitops-proposals.md)
+
+| Make everyday work easier | What you get |
+| --- | --- |
+| `doctor` | Prerequisite explanations; cluster authorization checks only with an explicit context |
+| `guide` | Task selection and prompts instead of memorizing flags; review before running |
+| `diagnose --format text` | Symptoms, evidence, uncertainty and suggested safe next reads |
+| `example` | Offline crash, image-pull and selector learning examples |
+| `report` | Standalone local HTML, Markdown or summary JSON from saved evidence |
+| `handover` | Ticket/shift draft with owner, impact and update-time fields to complete |
+| `gitops-propose` | Local image-only source patch and review notes for your normal GitOps PR process |
+
+Existing snapshots, comparisons, timelines, alerts and CI integrations are retained. Reports can show observed changes and scoped repair audit outcomes; they do not infer root cause or business recovery. No ticket, message, PR or deployment is created by these new usability commands. **Installation, runtime behavior and usability remain unverified.**
+
 ## Use it in your normal delivery workflow
 
 | Need | Command or integration | What happens |
@@ -17,7 +45,7 @@ Use this when you are about to deploy and want one readable answer to: **what is
 | Troubleshoot one application | `bundle` | Private evidence selected through Deployment → ReplicaSet → Pod ownership |
 | Trusted live CI gate | Optional Jenkins stage | Explicit context, approved credential and private report destination; disabled by default |
 
-Automatic offline checks are configured for future matching PRs/main pushes. **This update is marked `[skip ci]` to honor the instruction not to run anything yet. No successful CI run is claimed.** Existing image publication, security/release gates and deployment approvals remain separate and manual.
+Automatic offline checks are configured for future matching PRs/main pushes. **This code-only update is marked `[skip ci]` to honor the instruction not to run anything yet. No successful CI run is claimed.** Existing image publication, security/release gates and deployment approvals remain separate and manual.
 
 [CI/CD integration and trust boundaries](docs/ci-integration.md) · [YAML/Helm input](docs/manifest-input.md)
 
@@ -54,7 +82,7 @@ Then use `devops-toolkit ...`. Installation is supplied as source configuration 
 mkdir -p reports
 devops-toolkit release-check --context YOUR_CONTEXT --namespace platform \
   --deployment YOUR_DEPLOYMENT --service YOUR_SERVICE \
-  --file k8s/release.yaml --output reports/release-check.json
+  --file k8s/release.yaml --format text --output reports/release-check.json
 ```
 
 Input can be JSON, multi-document Kubernetes YAML or a trusted local Helm chart. Omit `--file` to inspect the live Deployment. Supply `--policy` if you have a reviewed recovery approval. Use `--chart ./charts/my-app --release my-app --values values/staging.yaml` instead of `--file` for local Helm rendering. [Read the six checks and limits](docs/release-check.md).
@@ -138,6 +166,9 @@ Or choose **Actions → Local recovery demo → Run workflow** and select one sc
 
 | Command | Purpose | Changes cluster state? |
 | --- | --- | --- |
+| `doctor` / `guide` | Prerequisite checks / interactive command planning | No; doctor contacts cluster only with explicit context |
+| `example` / `report` / `handover` | Offline learning, readable evidence and handover drafts | No cluster access |
+| `gitops-propose` | Local image-only source proposal for review | No cluster or Git changes |
 | `manifest-check` | Offline rendered configuration feedback for CI | No cluster access |
 | `release-check` | Six live/candidate checks and one readable decision | No |
 | `preflight` | Detailed configuration/reference/capacity checks | No |

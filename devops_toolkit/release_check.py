@@ -190,6 +190,7 @@ def main(argv=None):
     parser.add_argument('--policy', help='Optional existing approval policy, checked without executing it')
     parser.add_argument('--skip-image-check', action='store_true', help='Explicitly skip registry access; result requires review')
     parser.add_argument('--output', help='New private JSON report')
+    parser.add_argument('--format', choices=['json', 'text'], default='json', help='Readable text or existing JSON output')
     args = parser.parse_args(argv)
     if not args.context.strip() or args.context.startswith('-') or not re.fullmatch(r'[a-z0-9](?:[-a-z0-9]*[a-z0-9])?', args.namespace) or any(name and not re.fullmatch(r'[a-z0-9](?:[-a-z0-9.]*[a-z0-9])?', name) for name in (args.deployment, args.service)):
         parser.error('Use explicit context and valid resource names')
@@ -198,7 +199,8 @@ def main(argv=None):
         report = run(Kube(args.context, args.namespace), args)
         if args.output:
             write_private(Path(args.output), json.dumps(report, indent=2) + '\n')
-        print(json.dumps(report, indent=2, ensure_ascii=True))
+        from .report import console
+        print(console(report) if args.format == 'text' else json.dumps(report, indent=2, ensure_ascii=True))
         return 1 if report['decision'] == 'BLOCKED' else 2 if report['decision'] == 'NEEDS_REVIEW' else 0
     except (QueryError, OSError, ValueError, KeyError, TypeError, AttributeError):
         print('Release check incomplete: check candidate JSON, context, permissions and output path. No deployment or repair was performed.', file=sys.stderr)

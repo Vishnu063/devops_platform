@@ -129,6 +129,7 @@ def main(argv=None):
     parser.add_argument('--namespace', default='platform')
     parser.add_argument('--output', help='New private JSON report')
     parser.add_argument('--warnings-as-errors', action='store_true')
+    parser.add_argument('--format', choices=['json', 'text'], default='json', help='Readable text or existing JSON output')
     args = parser.parse_args(argv)
     if not re.fullmatch(r'[a-z0-9](?:[-a-z0-9]*[a-z0-9])?', args.namespace):
         parser.error('Use a valid namespace')
@@ -136,7 +137,8 @@ def main(argv=None):
         report = inspect(source_document(args), args.namespace)
         if args.output:
             write_private(Path(args.output), json.dumps(report, indent=2) + '\n')
-        print(json.dumps(report, indent=2, ensure_ascii=True))
+        from .report import console
+        print(console(report) if args.format == 'text' else json.dumps(report, indent=2, ensure_ascii=True))
         return 1 if report['configuration_decision'] == 'BLOCKED' or args.warnings_as_errors and report['configuration_decision'] == 'CHECKS_PASSED_WITH_WARNINGS' else 0
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         print('Offline check incomplete: inspect the input, install the YAML extra if needed and use a new output path. No cluster was contacted.', file=sys.stderr)

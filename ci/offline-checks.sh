@@ -13,7 +13,7 @@ if [[ -e reports/offline-check.json || -e reports/offline-summary.md ]]; then
 fi
 TOOLKIT_RENDER_DIR="$(mktemp -d)"
 trap 'rm -rf -- "$TOOLKIT_RENDER_DIR"' EXIT
-for TOOLKIT_TEST_PATTERN in test_toolkit.py test_compare.py test_recovery.py test_watch_recovery.py test_repair.py test_demo.py test_product.py test_ci_tools.py; do
+for TOOLKIT_TEST_PATTERN in test_toolkit.py test_compare.py test_recovery.py test_watch_recovery.py test_repair.py test_demo.py test_product.py test_ci_tools.py test_usability.py; do
   "$TOOLKIT_PYTHON" -m unittest discover -s tests -p "$TOOLKIT_TEST_PATTERN" -v
 done
 # Chart rendering is isolated from the network. The pinned tool image may need
