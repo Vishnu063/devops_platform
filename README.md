@@ -1,8 +1,30 @@
 # DevOps Platform
 
-A small Flask API with a complete delivery path: source checks, container scanning, quality gates, signed images and GitOps releases.
+A DevOps project with two practical tools: **check a deployment before releasing it** and **collect evidence when something breaks**. A small Flask API provides the delivery target, with security gates, signed images and GitOps deployment.
 
 **Status:** Repository review and hardening are complete for this revision. Unit tests, scanner execution, image builds and deployment validation remain pending. No AWS resources have been provisioned.
+
+## Start here
+
+New to the project? Read [the simple walkthrough](docs/start-here.md).
+
+### Check a deployment
+
+```bash
+python -m devops_toolkit preflight --context YOUR_CONTEXT --namespace platform
+```
+
+Checks image digests, resource settings, probes, required configuration and estimated capacity. It inspects the live Deployment unless you supply a proposed JSON manifest.
+
+### Collect incident evidence
+
+```bash
+python -m devops_toolkit incident --context YOUR_CONTEXT --namespace platform
+```
+
+Creates a private local report with pod health, restarts, deployment state and event reasons. Logs are off by default. Both commands are read-only and require Python 3.12, kubectl and authorized cluster access.
+
+[Commands, examples and explanations →](docs/toolkit.md)
 
 ## Delivery flow
 
@@ -54,7 +76,8 @@ The service is stateless and has no downstream dependency. Logs omit query strin
 
 | Path | Contents |
 | --- | --- |
-| app/, tests/ | API and unit tests |
+| devops_toolkit/ | Read-only deployment checks and incident evidence CLI |
+| app/, tests/ | API and regression tests |
 | ci/ | Shared checks used by GitHub Actions and Jenkins |
 | .github/workflows/ | Check, release and reusable quality jobs |
 | charts/platform/ | Helm chart and multi-zone deployment profile |
@@ -68,6 +91,7 @@ The service is stateless and has no downstream dependency. Logs omit query strin
 GitHub Actions is the publishing authority. Jenkins runs the same source, image and external quality checks, but does not publish.
 
 Releases use:
+
 - Hash-locked Python dependencies and digest-pinned base/tool images.
 - Git-history scanning with Gitleaks and local Semgrep rules.
 - Trivy and Snyk gates for high/critical container vulnerabilities.
@@ -83,4 +107,4 @@ The default chart runs a small lab. The production profile requires an approved 
 
 Terraform and Ansible deliberately remain a **single-node lab**. They are not a production cluster or a free-cost guarantee. EC2, storage and public IPv4 may be billed.
 
-Start with [setup](docs/setup.md), [design decisions](docs/decisions.md), [runbook](docs/runbook.md), [learning](docs/learning.md), and [review findings](docs/review.md). [Deployment notes](docs/readiness.md) list the evidence still needed before production use.
+Start with [the walkthrough](docs/start-here.md), [toolkit commands](docs/toolkit.md), [setup](docs/setup.md), [design decisions](docs/decisions.md), [runbook](docs/runbook.md), [learning](docs/learning.md), and [review findings](docs/review.md). [Deployment notes](docs/readiness.md) list the evidence still needed before production use.

@@ -12,7 +12,7 @@ docker run --rm --network none -v "$PWD:/repo:ro" \
   "$GITLEAKS_IMAGE" git /repo --redact --exit-code 1
 docker run --rm --network none -v "$PWD:/src:ro" -w /src \
   -e SEMGREP_USER_DATA_FOLDER=/tmp/semgrep "$SEMGREP_IMAGE" \
-  semgrep scan --config /src/.semgrep.yml --metrics off --disable-version-check --error /src/app
+  semgrep scan --config /src/.semgrep.yml --metrics off --disable-version-check --error /src/app /src/devops_toolkit
 docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e PYTHONUSERBASE=/tmp/python-user \
   -v "$PWD:/src" -w /src "$PYTHON_IMAGE" sh -ec \
   'pip install --user --only-binary=:all: --require-hashes -r requirements-dev.txt

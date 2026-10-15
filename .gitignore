@@ -18,3 +18,5 @@ ansible/inventory.local
 platform-image.tar
 ansible/*.local
 kubeconfig*
+
+desired.json
