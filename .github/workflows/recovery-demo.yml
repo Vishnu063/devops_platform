@@ -1,0 +1,62 @@
+name: Local recovery demo
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: recovery-demo-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install pinned local-cluster tools
+        env:
+          GOBIN: ${{ runner.temp }}/demo-bin
+        run: |
+          set -euo pipefail
+          mkdir -p "$GOBIN"
+          go install sigs.k8s.io/kind@v0.33.0
+          curl --fail --location --retry 3 --output "$GOBIN/kubectl" https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/kubectl.sha256" https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl.sha256
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          binary = Path(os.environ['GOBIN']) / 'kubectl'
+          expected = (Path(os.environ['RUNNER_TEMP']) / 'kubectl.sha256').read_text().strip()
+          assert hashlib.sha256(binary.read_bytes()).hexdigest() == expected, 'kubectl checksum mismatch'
+          binary.chmod(0o755)
+          PY
+          echo "$GOBIN" >> "$GITHUB_PATH"
+      - name: Run focused offline regression cases
+        run: |
+          python3 -m unittest discover -s tests -p 'test_demo.py' -v
+          python3 -m unittest discover -s tests -p 'test_recovery.py' -v
+          python3 -m unittest discover -s tests -p 'test_watch_recovery.py' -v
+      - name: Demonstrate failed image and automatic recovery
+        run: python3 -m devops_toolkit demo --output reports/recovery-demo
+      - name: Show observed result
+        if: always()
+        run: |
+          if [ -f reports/recovery-demo/summary.md ]; then
+            cat reports/recovery-demo/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Demo did not produce live evidence. Inspect the failed step.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: local-recovery-evidence
+          path: |
+            reports/recovery-demo/summary.md
+            reports/recovery-demo/results.json
+            reports/recovery-demo/recovery.jsonl
+            reports/recovery-demo/comparison.json
+            reports/recovery-demo/comparison.txt
+            reports/recovery-demo/monitor.txt
+          if-no-files-found: warn
+          retention-days: 7

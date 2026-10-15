@@ -172,3 +172,7 @@ Read [recovery setup and limits](recovery.md) and [all Kubernetes problem types]
 ## Monitor an approved rollout automatically
 
 `watch-recovery` waits for a persistent failed-rollout condition and can trigger one approved image repair with `--execute`. It previews by default, stops after one attempt and uses the same policy, identity, GitOps and audit guards as `recover`. Read [setup, command and limits](recovery.md#automatically-detect-and-recover-one-approved-rollout). No monitor is currently running; tests and live validation remain pending.
+
+## Try recovery on a separate local cluster
+
+Run `python -m devops_toolkit demo` after installing local Docker, kind and kubectl, or manually run the **Local recovery demo** GitHub workflow. It introduces one failed image, attempts approved recovery, checks HTTP and records the result. Read [demo setup and evidence](demo.md). The implementation is supplied; live validation remains pending.

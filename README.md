@@ -4,6 +4,22 @@ A DevOps project that helps you **check deployments, diagnose Kubernetes problem
 
 **Status:** Recovery code and mock test cases are included, but tests, scanner execution, image builds and live deployment/recovery validation remain pending. No cluster repair or AWS provisioning has been performed. This is not a production-validated auto-healer.
 
+## Try a real recovery demo
+
+Want to see the recovery flow before giving this toolkit access to a real environment?
+
+```bash
+python -m devops_toolkit demo
+```
+
+With local Docker, kind and kubectl installed, this creates a separate local cluster, introduces a bad image, invokes approved automatic recovery, checks HTTP responses and writes a readable evidence report. It removes the demo cluster afterwards. It uses no existing cluster context or cloud account.
+
+You can also choose **Actions → Local recovery demo → Run workflow** to attempt the same scenario on a GitHub runner. Nothing runs automatically on push.
+
+[Prerequisites, exact steps and report explanation](docs/demo.md)
+
+**Demo validation is pending:** the script, manual workflow and regression cases are provided; no live successful run is claimed.
+
 ## Can it automatically fix Kubernetes problems?
 
 **It can attempt approved repairs after setup:**
@@ -60,6 +76,7 @@ python -m devops_toolkit compare before/report.json after/report.json
 
 | Command | When to use it | What you get |
 | --- | --- | --- |
+| `demo` | Try the project in isolation | New local cluster, failed-image recovery attempt and evidence report |
 | `preflight` | Before deployment | Configuration findings and estimated capacity |
 | `incident` | Before a release or during a problem | A private snapshot of the namespace |
 | `compare` | After collecting two snapshots | A readable summary of observed changes |

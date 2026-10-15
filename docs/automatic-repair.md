@@ -77,3 +77,7 @@ This follows approved Git content, including future main-branch commits; enforce
 Per the request to verify later, this change includes mock regression cases and static syntax checks only. Before unattended use, run the suite and isolated cluster drills for preview, expiry, policy editing, GitOps/HPA refusal, identity/spec changes, simultaneous repairs, API response loss, admission mutation, audit failure, wrong selectors, quota failures, healthy and failed recovery. Verify application traffic separately. No production-readiness claim is made.
 
 Primary references: [Kubernetes Deployment behavior](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), [HPA](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/), [EndpointSlices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/), [Argo CD automated sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/).
+
+## Try recovery on a separate local cluster
+
+Run `python -m devops_toolkit demo` after installing local Docker, kind and kubectl, or manually run the **Local recovery demo** GitHub workflow. It introduces one failed image, attempts approved recovery, checks HTTP and records the result. Read [demo setup and evidence](demo.md). The implementation is supplied; live validation remains pending.

@@ -347,8 +347,10 @@ def incident(kube, args):
 
 def main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
-    if arguments and arguments[0] in {"diagnose", "recover", "watch-recovery", "repair"}:
-        if arguments[0] == "diagnose":
+    if arguments and arguments[0] in {"diagnose", "recover", "watch-recovery", "repair", "demo"}:
+        if arguments[0] == "demo":
+            from .demo import main as command_main
+        elif arguments[0] == "diagnose":
             from .diagnose import main as command_main
         elif arguments[0] == "recover":
             from .recovery import main as command_main
@@ -360,6 +362,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="python -m devops_toolkit")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("repair", help="Monitor and restore approved container settings, replicas or Service selector")
+    subcommands.add_parser("demo", help="Create a disposable local kind recovery demonstration")
     subcommands.add_parser("diagnose", help="Read workload symptoms and recommended actions")
     subcommands.add_parser("recover", help="Preview or execute policy-bound image recovery")
     subcommands.add_parser("watch-recovery", help="Monitor one rollout and automatically recover approved failure")
