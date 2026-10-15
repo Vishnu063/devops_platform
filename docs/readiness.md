@@ -31,3 +31,7 @@ Completed: file-by-file source/configuration review; upstream action/image refer
 Not executed: unit/integration tests, coverage measurement, security scanner engines, Docker builds, Helm/Terraform runtime validation, cloud apply or live operational exercises.
 
 Do not label a deployment production-ready until these checks pass in the chosen environment and its operating requirements are documented.
+
+## Toolkit usability revision (unexecuted)
+
+Source adds an installable CLI, policy generation, combined release checks, offline timelines, opt-in alerts, stop controls and four local demo scenarios. Installation/build, unit tests, real notifications, permissions, live Kubernetes compatibility and all scenario runs remain pending. See [compatibility](compatibility.md) and [CHANGELOG](../CHANGELOG.md). This revision did not run tests, demos, scanners, workflows, builds or deployments.

@@ -81,3 +81,7 @@ Primary references: [Kubernetes Deployment behavior](https://kubernetes.io/docs/
 ## Try recovery on a separate local cluster
 
 Run `python -m devops_toolkit demo` after installing local Docker, kind and kubectl, or manually run the **Local recovery demo** GitHub workflow. It introduces one failed image, attempts approved recovery, checks HTTP and records the result. Read [demo setup and evidence](demo.md). The implementation is supplied; live validation remains pending.
+
+## Easier setup and operation
+
+Use [the policy generator](policies.md) instead of manually copying UIDs/hashes. [Release-check](release-check.md) explains pre-deployment evidence, [timeline](timeline.md) correlates snapshots/audits and [alerts](alerts.md) provides optional completion notifications. Direct repairs now honor [namespace pause and process stop controls](operations.md); these are checked before planning and immediately before mutation but cannot atomically cancel an API request already in flight. All new behavior remains unexecuted.

@@ -1,0 +1,67 @@
+# TEMPLATE ONLY. Review the platform namespace, named target and SA before applying.
+# Does not grant Secret access, pod deletion/exec or node mutation.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: devops-toolkit
+  namespace: platform
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: devops-toolkit-recovery
+  namespace: platform
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [platform]
+    verbs: [get, patch]
+  - apiGroups: [""]
+    resources: [services]
+    resourceNames: [platform]
+    verbs: [get, patch]
+  - apiGroups: [autoscaling]
+    resources: [horizontalpodautoscalers]
+    verbs: [list]
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: devops-toolkit-recovery
+  namespace: platform
+subjects:
+  - kind: ServiceAccount
+    name: devops-toolkit
+    namespace: platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: devops-toolkit-recovery
+---
+# Namespaces are cluster-scoped, even though access is limited to one name.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: devops-toolkit-platform-namespace-reader
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    resourceNames: [platform]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: devops-toolkit-platform-namespace-reader
+subjects:
+  - kind: ServiceAccount
+    name: devops-toolkit
+    namespace: platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: devops-toolkit-platform-namespace-reader

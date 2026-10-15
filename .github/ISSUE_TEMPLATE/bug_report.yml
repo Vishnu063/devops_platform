@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible toolkit failure without sharing credentials.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Remove tokens, webhook URLs, kubeconfig, Secret data, raw logs and customer details. Report security vulnerabilities privately using SECURITY.md."
+  - type: input
+    id: version
+    attributes:
+      label: Toolkit version or commit
+      placeholder: devops-toolkit --version, or the commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python, OS/architecture, kubectl and Kubernetes versions; local kind or other environment.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Sanitized command, steps, expected result and actual result. Use placeholders for target identities.
+    validations:
+      required: true
+  - type: dropdown
+    id: mutation
+    attributes:
+      label: Did a cluster mutation occur?
+      options:
+        - No — read-only command or preview
+        - Yes — inspect the private audit and live state
+        - Unknown — do not retry the operation blindly
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Relevant exit code and audit event names. Do not attach kubeconfig, policy contents or raw Secrets.

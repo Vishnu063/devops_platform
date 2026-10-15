@@ -1,113 +1,119 @@
-# DevOps Platform
+# DevOps Platform Toolkit
 
-A DevOps project that helps you **check deployments, diagnose Kubernetes problems, compare incident snapshots and recover approved failed image releases**. A small Flask API provides the delivery target, with security gates, signed images and GitOps deployment.
+**Check a Kubernetes release, understand an incident, and recover an explicitly approved failure.**
 
-**Status:** Recovery code and mock test cases are included, but tests, scanner execution, image builds and live deployment/recovery validation remain pending. No cluster repair or AWS provisioning has been performed. This is not a production-validated auto-healer.
+Use this when you are about to deploy and want one readable answer to: **what is missing, what could reduce availability, and what recovery is actually approved?** During an incident, collect evidence and build a timeline rather than repeating the same investigation commands.
 
-## Try a real recovery demo
+**Status: development version `0.2.0.dev0`.** Features, regression cases and demo workflows are included. Tests, package installation/build, scanners, notification delivery and live recovery have **not been run** for this revision. Nothing is deployed or enabled. This is not a production-validated auto-healer.
 
-Want to see the recovery flow before giving this toolkit access to a real environment?
+## Why a DevOps engineer would use it
 
-```bash
-python -m devops_toolkit demo
-```
-
-With local Docker, kind and kubectl installed, this creates a separate local cluster, introduces a bad image, invokes approved automatic recovery, checks HTTP responses and writes a readable evidence report. It removes the demo cluster afterwards. It uses no existing cluster context or cloud account.
-
-You can also choose **Actions → Local recovery demo → Run workflow** to attempt the same scenario on a GitHub runner. Nothing runs automatically on push.
-
-[Prerequisites, exact steps and report explanation](docs/demo.md)
-
-**Demo validation is pending:** the script, manual workflow and regression cases are provided; no live successful run is claimed.
-
-## Can it automatically fix Kubernetes problems?
-
-**It can attempt approved repairs after setup:**
-
-| Problem | Available automatic action | Limit |
+| Your question | What the toolkit checks | Important boundary |
 | --- | --- | --- |
-| Bad image release | Restore approved image digests (`watch-recovery`) | Failed Deployment rollout only |
-| Broken container configuration | Restore approved image, resource, probe, security or environment-reference fields (`repair`) | Exact failed Deployment spec; operator supplies the known fix |
-| Incorrect Service selector | Restore the approved selector (`repair`) | Ordinary ClusterIP Service; verify ready EndpointSlices |
-| Replica count reduced accidentally | Restore an approved count (`repair`) | Increase from nonzero, maximum 10, refuses HPA ownership |
-| GitOps configuration drift | Optional Argo CD self-heal overlay | Reconciles Git; bad Git configuration still needs correction |
-| CI failures, node/storage faults, missing credentials, application bugs | Diagnosis, evidence and investigation guides | No generic automatic repair |
+| Does this image exist? | Digest and registry access | Local registry identity; not a signature or node-pull guarantee |
+| Are Secrets and ConfigMaps available? | Required live objects and keys | No values in reports; proposed same-release objects are not assumed present |
+| Can a new pod fit? | Estimated CPU/memory headroom | One pod; not full rollout, quotas or scheduler simulation |
+| Will the Service select these pods? | Candidate labels, selectors and named ports | No proof of exclusive selection or real traffic |
+| Could this reduce availability? | Recreate, maxUnavailable, downscale, readiness and live baseline | Configuration risks, not an outage prediction |
+| What recovery is approved? | Policy expiry, scope, UID, candidate hash and opt-in | No policy means no approved direct recovery |
 
-Each direct repair requires explicit resource opt-in, an expiring policy tied to exact UIDs and spec, three observations, a conditional patch, a private audit and a persistent one-attempt latch. Policies contain approved fixes; the toolkit does not invent fixes. No monitor is running. **Implementation is not yet tested or production-validated.**
+The report says **BLOCKED**, **NEEDS_REVIEW** or **CHECKS_PASSED**, with evidence. Missing access, skipped checks and uncertainty stay visible. Passing implemented checks is not deployment approval.
 
-Read [automatic repair setup and examples](docs/automatic-repair.md). Existing image recovery remains available as documented below. Networking beyond Service selectors, storage, node recovery and arbitrary security incidents remain outside automatic repair.
+## Install the CLI when you are ready
 
-```bash
-python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform
-```
-
-[Problem list and countermeasures](docs/kubernetes-problems.md) · [How to configure automatic image recovery](docs/recovery.md)
-
-The repository's Argo CD-managed application must be repaired through Git. Direct recovery refuses recognized GitOps-managed workloads. Use a separately approved lab Deployment to validate this feature first. Unattended recovery is available through `watch-recovery` after you prepare a valid policy and enable execution. The monitor is not running or installed on any host or cluster.
-
-### Automatic recovery after setup
-
-Prepare the policy and workload opt-in using [the recovery guide](docs/recovery.md). Then start the monitor:
+From this repository, using Python 3.12 or later:
 
 ```bash
-python -m devops_toolkit watch-recovery --policy /secure/recovery-policy.json \
-  --execute --audit /secure/reports/recovery-UNIQUE-RUN-ID.jsonl
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install .
 ```
 
-It watches only the exact approved workload and pod template. After three consecutive failed-rollout observations, it attempts one image repair and checks Deployment readiness. It stops on success, a changed or expired policy, an error, or the monitoring timeout. It does not repair arbitrary pod, network, storage or cluster failures. Tests and live recovery drills remain pending.
+Then use `devops-toolkit ...`. Installation is supplied as source configuration and remains unverified; no package is published to PyPI. All commands also work from the repository as `python -m devops_toolkit ...`, without installing the CLI package. The toolkit has no third-party Python runtime dependencies. Cluster reads need kubectl; image checks need Docker.
 
-## What changed before the failure?
+## A practical workflow
 
-Save an incident snapshot before a release and another afterwards. Compare them to spot changed images, fewer ready replicas, increased restarts and newly captured warnings.
-
-**Example:** a deployment had **3 ready replicas** before a release and **1 afterwards**, its image changed, and a container's restart counter increased. The tool highlights those differences so you know where to investigate. It does not claim the deployment caused the failure.
-
-Try the included sample without a cluster or credentials:
+### 1. Check a release without deploying it
 
 ```bash
-python -m devops_toolkit compare examples/snapshots/before.json examples/snapshots/after.json
+mkdir -p reports
+devops-toolkit release-check --context YOUR_CONTEXT --namespace platform \
+  --deployment YOUR_DEPLOYMENT --service YOUR_SERVICE \
+  --file candidate.local.json --output reports/release-check.json
 ```
 
-The sample data is illustrative, not real test evidence. To compare your own saved snapshots:
+Input is a Deployment JSON or Kubernetes List JSON. Omit `--file` to inspect the live Deployment. Supply `--policy` if you have a reviewed recovery approval. Helm/YAML rendering stays in your existing toolchain. [Read the six checks and limits](docs/release-check.md).
+
+### 2. Generate a policy without copying IDs or hashes
+
+Supply a reviewed JSON correction, such as container names mapped to known compatible image digests:
 
 ```bash
-python -m devops_toolkit compare before/report.json after/report.json
+devops-toolkit policy create --context YOUR_CONTEXT --namespace platform \
+  --kind Deployment --name YOUR_DEPLOYMENT --action images \
+  --approved approved-images.local.json --output reports/recovery-policy.local.json
 ```
 
-| Command | When to use it | What you get |
+The generator reads live identities and hashes for you. It requires the workload's existing opt-in and preserves repair guards. It does not invent a fix or enable automation. [Examples for all four actions](docs/policies.md).
+
+### 3. Recover only after explicit enabling
+
+```bash
+devops-toolkit watch-recovery --policy reports/recovery-policy.local.json \
+  --execute --audit reports/recovery-UNIQUE-ID.jsonl
+```
+
+The image monitor waits for persistent failed-rollout evidence, makes one conditional repair and checks readiness. `repair` supports approved container fields, Service selector and upward replica restoration. Preview is the default. Scope, expiry, GitOps/HPA ownership checks, audit and attempt latches apply. Namespace pause and process stop controls are available. [Repair guide](docs/automatic-repair.md) · [Stop and permissions](docs/operations.md).
+
+### 4. Understand what happened
+
+```bash
+devops-toolkit incident --context YOUR_CONTEXT --namespace platform --output reports/before
+# Collect additional snapshots when appropriate, using new folders.
+devops-toolkit timeline reports/before/report.json reports/after/report.json \
+  --audit reports/recovery-UNIQUE-ID.jsonl --output reports/timeline.md
+```
+
+The timeline shows observed symptoms, differences and scoped repair events. It does not prove root cause. [Timeline guide](docs/timeline.md).
+
+### 5. Receive optional outcome alerts
+
+Add `--notify-config alerts.local.json` to an operational command. Configure Slack, Teams or a generic HTTPS receiver through a secret environment variable. Nothing is sent by default; sensitive reports and target identities are excluded from notifications. [Alert setup and delivery limits](docs/alerts.md).
+
+## See a repair on a disposable local cluster later
+
+The code includes four scenarios:
+
+```bash
+devops-toolkit demo --scenario images
+devops-toolkit demo --scenario selector
+devops-toolkit demo --scenario replicas
+devops-toolkit demo --scenario configuration
+```
+
+Each creates its own local kind cluster, introduces a known fault, attempts its approved correction, checks HTTP and audit evidence, writes a timeline and removes its cluster. It requires local Docker, kind and kubectl. These commands **create and delete local resources when run**. They are not being run as part of this update.
+
+Or choose **Actions → Local recovery demo → Run workflow** and select one scenario. The workflow is manual only. **All four live scenarios remain unverified.** [Demo guide](docs/demo.md).
+
+## Commands at a glance
+
+| Command | Purpose | Changes cluster state? |
 | --- | --- | --- |
-| `demo` | Try the project in isolation | New local cluster, failed-image recovery attempt and evidence report |
-| `preflight` | Before deployment | Configuration findings and estimated capacity |
-| `incident` | Before a release or during a problem | A private snapshot of the namespace |
-| `compare` | After collecting two snapshots | A readable summary of observed changes |
-| `diagnose` | During an incident | Symptoms, partial-data warnings and next actions |
-| `recover` | After an approved failed image rollout | Preview by default; one guarded repair with `--execute` |
-| `repair` | An exact approved configuration failure or drift | Monitor and attempt one approved container, replica or Service-selector repair |
-| `watch-recovery` | While an approved rollout is in progress | Monitor and automatically trigger one approved image recovery |
+| `release-check` | Six checks and one readable decision | No |
+| `preflight` | Detailed configuration/reference/capacity checks | No |
+| `diagnose` | Workload symptoms and suggested next actions | No |
+| `policy create` / `policy check` | Generate private approval / validate offline | No |
+| `incident` | Save a private namespace snapshot | No |
+| `compare` / `timeline` | Compare/correlate saved evidence offline | No |
+| `recover` / `watch-recovery` | One approved image repair | Only with `--execute` |
+| `repair` | Approved container, selector or replica correction | Only with `--execute` |
+| `demo` | Disposable local recovery scenario | Yes, its newly created local cluster only |
 
-Comparison is offline and read-only. It requires only Python 3.12. Partial snapshots are flagged; a missing record is not automatically treated as a deleted resource.
+## What it will not automatically fix
 
-## Start here
+Application bugs, missing credentials, arbitrary network failures, storage corruption, node failures and control-plane disasters need an engineer or the owning platform controller. GitOps-managed resources should be repaired through approved Git state; direct repairs refuse recognized Argo CD/Flux ownership. An approved image correction is not a full revision or database rollback.
 
-New to the project? Read [the simple walkthrough](docs/start-here.md).
-
-### Check a deployment
-
-```bash
-python -m devops_toolkit preflight --context YOUR_CONTEXT --namespace platform
-```
-
-Checks image digests, resource settings, probes, required configuration and estimated capacity. It inspects the live Deployment unless you supply a proposed JSON manifest.
-
-### Collect incident evidence
-
-```bash
-python -m devops_toolkit incident --context YOUR_CONTEXT --namespace platform
-```
-
-Creates a private local report with pod health, restarts, deployment state and event reasons. Logs are off by default. Preflight and incident collection are read-only and require Python 3.12, kubectl and authorized cluster access. Offline comparison needs neither kubectl nor cluster access.
-
-[Commands, examples and explanations →](docs/toolkit.md)
+Read [all Kubernetes problem types](docs/kubernetes-problems.md), [compatibility/evidence](docs/compatibility.md), [contribution guide](CONTRIBUTING.md), [security reporting](SECURITY.md) and [changelog](CHANGELOG.md). The Flask API and infrastructure below remain the separate delivery/learning target.
 
 ## Delivery flow
 

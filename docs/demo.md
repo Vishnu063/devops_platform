@@ -1,13 +1,13 @@
 # See automatic recovery on a local cluster
 
-This demo shows what the toolkit actually does: a known image fails, an approved policy authorizes recovery, and the monitor restores the healthy image once. It produces a readable report from live observations. It is not a general-purpose Kubernetes auto-healer.
+The demo includes four isolated scenarios: bad image, incorrect Service selector, reduced replicas and broken readiness configuration. Each supplies a known approved correction and attempts it once. When run, it produces a readable report from live observations. It is not a general-purpose Kubernetes auto-healer.
 
 **Current evidence:** the demo implementation and offline regression cases are supplied. The live demo and tests have not been executed in this workspace. Docker, kind and kubectl are unavailable here. No successful-run result is claimed.
 
 ## Fastest way: run it on GitHub
 
 1. Open **Actions → Local recovery demo → Run workflow** in this repository.
-2. Choose the branch you want to verify and run the workflow.
+2. Choose the branch and scenario you want to verify and run the workflow.
 3. Open its summary and download **local-recovery-evidence**.
 
 The workflow is manual only. It creates a kind cluster on an Ubuntu GitHub runner, runs focused offline checks and then attempts the real demo. It uses no AWS account, production kubeconfig or repository secret. It does not deploy the platform application. A green result applies only to the commit and isolated scenario that ran. The workflow itself has not been run yet.
@@ -97,6 +97,20 @@ Exit codes: `0` completed demo and requested cleanup; `1` failed stage or failed
 
 ## What this verifies and what remains
 
-A successful live run demonstrates this one image-recovery scenario, API-proxy HTTP checks, audit evidence and repeated-invocation refusal. It does not verify container-field repair, Service-selector repair, replica restoration, Argo CD self-heal, production permissions, concurrent controllers, cloud failures, upgrades or disaster recovery. Those need their own isolated drills before use.
+A successful live run demonstrates only the selected scenario, API-proxy HTTP checks, audit evidence and repeated-invocation refusal. It does not verify all possible container fields, Argo CD self-heal, production permissions, concurrent controllers, cloud failures, upgrades or disaster recovery. Those need their own isolated drills before use.
 
 The manual workflow also runs offline cases for preview/no mutation, changed policy, identity checks, GitOps refusal, conditional patches and bounded monitoring. Passing mocks does not replace live Kubernetes validation.
+
+## Choose a scenario
+
+| Flag | Deliberate fault | Known approved correction |
+| --- | --- | --- |
+| `--scenario images` (default) | Nonexistent image digest | Restore the pinned healthy image |
+| `--scenario selector` | Service selector matches no demo pods | Restore the demo pod label selector |
+| `--scenario replicas` | Two demo replicas reduced to one | Restore the approved count of two; refuse HPA ownership |
+| `--scenario configuration` | Readiness probe points at a closed port | Restore the previously captured correct readiness probe |
+| `--scenario all` | Run all four in sequence | Separate new cluster per scenario; stop after a failure |
+
+`--scenario all` may take substantially longer and uses a new parent evidence folder. No attempt latch is cleared to reuse a workload. The configuration case deliberately breaks the probe while the server remains healthy; it does not claim that loosening probes repairs application failures. The selector case checks EndpointSlice readiness and the expected HTTP response; other network paths remain outside this drill.
+
+Successful scenario completion also writes `timeline.md`. Service selectors are checked directly by the demo; standard namespace snapshots do not include Service objects, so a selector diff is not fabricated in the snapshot comparison. Repair audit events identify that action in the timeline. All four scenarios and the updated workflow remain unrun.

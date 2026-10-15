@@ -140,6 +140,14 @@ def compare_files(before_path, after_path):
                     if left.get(key) != right.get(key):
                         add("container-change", resource, key + " changed", left.get(key), right.get(key))
 
+    old_templates = {d["name"]: d.get("template_sha256") for d in before["deployments"]}
+    for deployment in after["deployments"]:
+        old = old_templates.get(deployment["name"])
+        new = deployment.get("template_sha256")
+        if isinstance(old, str) and isinstance(new, str) and old != new:
+            add("pod-template-changed", "deployment/" + deployment["name"],
+                "Pod-template fingerprint changed; inspect the reviewed spec diff for details", old, new)
+
     def warning_events(report):
         result = {}
         for event in report["events"]:

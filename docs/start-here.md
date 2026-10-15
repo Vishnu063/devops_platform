@@ -1,76 +1,36 @@
-# Understand the project in ten minutes
+# Start with the engineer's task
 
-## The problem
+## Before a deployment
 
-A deployment can fail because an image is wrong, a required Secret is missing, probes are absent or the cluster lacks room. During an incident, engineers often repeat the same commands to collect evidence.
+Use [release-check](release-check.md). It checks image access, required live configuration, estimated capacity, Service matching, availability risks and recovery approval. It returns BLOCKED, NEEDS_REVIEW or CHECKS_PASSED with reasons. It does not deploy or guarantee success.
 
-This project combines a delivery pipeline with deployment checks, incident snapshots and offline comparison to reduce that repeated work.
+## During an incident
 
-## The commands
+Use `diagnose` to collect symptoms, `incident` to save a private snapshot and [timeline](timeline.md) to correlate snapshots with a repair audit. Comparison and timeline are offline. Observations are evidence, not proof of root cause.
 
-| Command | Use it when | Result |
-| --- | --- | --- |
-| `preflight` | Before a deployment or while reviewing configuration | Findings with PASS, FAIL, UNKNOWN or WARN |
-| `incident` | Before a release or when an application is unhealthy | A private JSON evidence folder |
-| `compare` | After collecting before/after snapshots | Changed images, replicas, restarts and warning events |
-| `diagnose` | During an incident | Workload symptoms and suggested next actions |
-| `recover` | An approved image release has failed | Preview, or one guarded image repair when explicitly enabled |
-| `watch-recovery` | Monitor one approved rollout | Automatically trigger one approved image repair when enabled |
+## For one approved automatic correction
 
-Read [the toolkit guide](toolkit.md) for copy-paste commands.
+Use [policy create](policies.md). You provide the known compatible fix; the generator fills live UIDs/hashes and expiry. Enable execution explicitly only after review. [Repair](automatic-repair.md) covers images/container fields, selectors and upward replica restoration within its limits. GitOps ownership should remain with its controller.
 
-## The application
+## For a completion message
 
-The small Flask API is the deployment target. It returns its version and exposes health and metrics endpoints. Gunicorn serves it inside a restricted Docker container.
+Set up an approved receiver using [alerts](alerts.md). Messages contain a fixed result record rather than reports, logs or credentials. Notifications are off by default.
 
-## How a change reaches Kubernetes
+## To learn and demonstrate later
 
-1. Git stores the code and reviewed changes.
-2. CI runs tests and source checks.
-3. Docker builds one image; scanners inspect it.
-4. SonarQube and Snyk must pass before publication.
-5. GitHub publishes and signs the image digest.
-6. A reviewed release file selects the digest.
-7. Argo CD applies that configuration after manual sync.
-8. Prometheus and Grafana help observe the service.
+Read [the demo guide](demo.md). Four disposable scenarios demonstrate image, selector, replica and readiness-configuration correction when run. No demo is running now. The [learning guide](learning.md) explains the wider delivery pipeline.
 
-## Where to look
+## Install and navigate
 
-| Question | Read |
+Follow [README](../README.md) to install the console CLI from source, or use `python -m devops_toolkit` from the repository. No PyPI package is published. The toolkit uses Python 3.12+ standard library; kubectl/Docker requirements depend on the command. The Flask API is a separate delivery target with its own dependencies.
+
+| Need | Guide |
 | --- | --- |
-| What can I run first? | [Toolkit commands](toolkit.md) |
-| How do I install and deploy it? | [Setup](setup.md) |
-| Why were these choices made? | [Design decisions](decisions.md) |
-| What do I do when it fails? | [Runbook](runbook.md) |
-| What should I learn? | [Learning guide](learning.md) |
-| What remains unverified? | [Readiness](readiness.md) |
+| Existing detailed command reference | [Toolkit](toolkit.md) |
+| Stop automation and review permissions | [Operations](operations.md) |
+| Intended versions versus verified results | [Compatibility](compatibility.md) |
+| Install infrastructure or deploy the API later | [Setup](setup.md) |
+| Design and production gaps | [Decisions](decisions.md), [readiness](readiness.md) |
+| Contribute or report a bug | [Contributing](../CONTRIBUTING.md), [security](../SECURITY.md) |
 
-## Current limits
-
-Preflight, incident, compare and diagnose are read-only helpers. Recovery can change approved images only when explicitly enabled; it does not guarantee incident resolution. No command guarantees scheduling or approves a release. The default AWS setup is a single-node lab. Production use requires target-environment validation and configuration.
-
-Tests, builds, scanner engines and live deployment remain pending. Example outputs in the documentation are illustrations, not claimed results.
-
-## Try comparison without Kubernetes
-
-```bash
-python -m devops_toolkit compare examples/snapshots/before.json examples/snapshots/after.json
-```
-
-These are illustrative files, not real incident evidence. Read the output as observations to investigate, not an automatic root-cause diagnosis. See [the comparison guide](compare.md).
-
-## Diagnose symptoms and recover approved images
-
-Use `python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform` to collect workload symptoms and suggested next actions. This command is read-only.
-
-The new `recover` command previews an approved image repair by default. Only `--execute` with a valid policy and an opted-in Deployment can mutate the cluster. It is limited to a failed rollout, refuses recognized GitOps ownership, records a private audit and blocks repeat attempts. Existing preflight, incident and compare commands remain read-only.
-
-Read [recovery setup and limits](recovery.md) and [all Kubernetes problem types](kubernetes-problems.md). No live repair has been executed; tests and cluster validation remain pending.
-
-## Monitor an approved rollout automatically
-
-`watch-recovery` waits for a persistent failed-rollout condition and can trigger one approved image repair with `--execute`. It previews by default, stops after one attempt and uses the same policy, identity, GitOps and audit guards as `recover`. Read [setup, command and limits](recovery.md#automatically-detect-and-recover-one-approved-rollout). No monitor is currently running; tests and live validation remain pending.
-
-## Try recovery on a separate local cluster
-
-Run `python -m devops_toolkit demo` after installing local Docker, kind and kubectl, or manually run the **Local recovery demo** GitHub workflow. It introduces one failed image, attempts approved recovery, checks HTTP and records the result. Read [demo setup and evidence](demo.md). The implementation is supplied; live validation remains pending.
+All new installation, tests, demos, alert delivery and live recovery remain unrun. Code presence is not production validation. No automation is installed or enabled by reading these guides or generating a policy.

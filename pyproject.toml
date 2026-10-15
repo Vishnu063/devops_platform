@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devops-platform-toolkit"
+version = "0.2.0.dev0"
+description = "Evidence-based Kubernetes release checks and explicitly approved recovery"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Systems Administration",
+]
+
+[project.scripts]
+devops-toolkit = "devops_toolkit.cli:main"
+
+[project.urls]
+Repository = "https://github.com/Vishnu063/devops_platform"
+Issues = "https://github.com/Vishnu063/devops_platform/issues"
+
+[tool.setuptools]
+packages = ["devops_toolkit"]

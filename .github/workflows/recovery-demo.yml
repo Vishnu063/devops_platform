@@ -1,6 +1,16 @@
 name: Local recovery demo
 on:
   workflow_dispatch:
+    inputs:
+      scenario:
+        description: Isolated scenario to demonstrate
+        type: choice
+        default: images
+        options:
+          - images
+          - selector
+          - replicas
+          - configuration
 permissions:
   contents: read
 concurrency:
@@ -35,10 +45,13 @@ jobs:
       - name: Run focused offline regression cases
         run: |
           python3 -m unittest discover -s tests -p 'test_demo.py' -v
+          python3 -m unittest discover -s tests -p 'test_product.py' -v
           python3 -m unittest discover -s tests -p 'test_recovery.py' -v
           python3 -m unittest discover -s tests -p 'test_watch_recovery.py' -v
-      - name: Demonstrate failed image and automatic recovery
-        run: python3 -m devops_toolkit demo --output reports/recovery-demo
+      - name: Demonstrate approved automatic recovery
+        env:
+          DEMO_SCENARIO: ${{ inputs.scenario }}
+        run: python3 -m devops_toolkit demo --scenario "$DEMO_SCENARIO" --output reports/recovery-demo
       - name: Show observed result
         if: always()
         run: |
@@ -58,5 +71,6 @@ jobs:
             reports/recovery-demo/comparison.json
             reports/recovery-demo/comparison.txt
             reports/recovery-demo/monitor.txt
+            reports/recovery-demo/timeline.md
           if-no-files-found: warn
           retention-days: 7

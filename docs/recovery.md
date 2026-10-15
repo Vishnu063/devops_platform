@@ -115,3 +115,7 @@ The audit directory must already exist and the filename must be new. The monitor
 Monitor exit codes: `0` ready without repair, eligible preview, or successful recovery verification; `1` monitoring/recovery timeout; `2` refusal, interruption or error. Console output distinguishes these outcomes. The private audit file is created only when repair is triggered; monitoring-only observations go to stdout. Preserve stdout and route nonzero exits to your own alert system before unattended use.
 
 A monitor is not enabled in this repository by default. Running the execute command requires a configured cluster, approved policy and workload opt-in. No cluster is connected here, and no monitor has been started. Mock test cases are supplied but have not been executed, following the request to verify later.
+
+## Easier setup and operation
+
+Use [the policy generator](policies.md) instead of manually copying UIDs/hashes. [Release-check](release-check.md) explains pre-deployment evidence, [timeline](timeline.md) correlates snapshots/audits and [alerts](alerts.md) provides optional completion notifications. Direct repairs now honor [namespace pause and process stop controls](operations.md); these are checked before planning and immediately before mutation but cannot atomically cancel an API request already in flight. All new behavior remains unexecuted.

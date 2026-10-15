@@ -20,3 +20,8 @@ ansible/*.local
 kubeconfig*
 
 desired.json
+
+build/
+dist/
+*.egg-info/
+*.local.json

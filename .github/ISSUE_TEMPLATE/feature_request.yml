@@ -1,0 +1,23 @@
+name: Feature request
+description: Explain an operational problem and the evidence needed to solve it.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What task is difficult today?
+      description: Describe the engineer's workflow and a concrete failure example.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Inputs, desired output and how an engineer knows the result is correct.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Repair boundaries
+      description: If this changes cluster state, describe authorization, stop conditions, ownership, retry limits and recovery checks.

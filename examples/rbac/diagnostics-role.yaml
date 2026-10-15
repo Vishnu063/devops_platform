@@ -1,0 +1,20 @@
+# Optional namespace diagnostics role. Bind only to the intended diagnostic identity.
+# No Secrets, logs, node reads or all-namespace capacity access are granted.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: devops-toolkit-diagnostics
+  namespace: platform
+rules:
+  - apiGroups: [""]
+    resources: [pods, events, persistentvolumeclaims, services]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list]
+  - apiGroups: [autoscaling]
+    resources: [horizontalpodautoscalers]
+    verbs: [list]
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [list]

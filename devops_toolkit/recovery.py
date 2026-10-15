@@ -9,6 +9,8 @@ import re
 import sys
 import time
 
+from .controls import ensure_enabled
+
 PREFIX = "devops-platform.io/"
 
 
@@ -48,6 +50,7 @@ def load_policy(path):
 
 
 def plan(deployment, namespace, p, *, require_failure=True):
+    ensure_enabled(namespace, p["namespace_uid"])
     m, spec, status = deployment["metadata"], deployment["spec"], deployment.get("status", {})
     if namespace["metadata"]["uid"] != p["namespace_uid"] or m["uid"] != p["deployment_uid"]:
         raise ValueError("Resource identity changed")
@@ -133,6 +136,7 @@ def main(argv=None, *, expected_policy_sha256=None):
             try:
                 if datetime.fromisoformat(p["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
                     raise ValueError("Policy expired before mutation")
+                ensure_enabled(kube.get("namespace", p["namespace"]), p["namespace_uid"])
                 mutation_started = True
                 applied = json.loads(kube.run("patch", "deployment", p["deployment"], "--type=json",
                                               "-p", json.dumps(patch), "-o", "json"))

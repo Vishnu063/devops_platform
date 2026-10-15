@@ -7,7 +7,7 @@ This toolkit helps with five everyday jobs:
 4. Diagnose common workload symptoms and read suggested next actions.
 5. Recover an approved failed image rollout when explicitly enabled.
 
-It runs on your machine using Python. Preflight, incident collection and diagnosis use existing kubectl access; comparison reads local files only. These commands are read-only. Recovery can patch approved images only with an explicit policy and `--execute`. No command installs a controller, switches contexts or uploads reports.
+It runs on your machine using Python. Preflight, incident collection and diagnosis use existing kubectl access; comparison reads local files only. These commands are read-only. Recovery/repair can patch only explicitly approved supported fields with `--execute`. No background controller is installed. Optional notifications send only a fixed outcome record when explicitly configured; the separate demo command creates its own local cluster.
 
 **Status:** implemented, with tests supplied for later execution. Live cluster behavior has not been verified.
 
@@ -176,3 +176,7 @@ Read [recovery setup and limits](recovery.md) and [all Kubernetes problem types]
 ## Try recovery on a separate local cluster
 
 Run `python -m devops_toolkit demo` after installing local Docker, kind and kubectl, or manually run the **Local recovery demo** GitHub workflow. It introduces one failed image, attempts approved recovery, checks HTTP and records the result. Read [demo setup and evidence](demo.md). The implementation is supplied; live validation remains pending.
+
+## Unified release workflow and new commands
+
+Start with [release-check](release-check.md) for the six deployment questions. Use [policy create](policies.md) to fill live UIDs/hashes from an explicit known correction, [timeline](timeline.md) to correlate snapshots/audits, and [alerts](alerts.md) for opt-in outcome delivery. Install the console command with the README instructions or use `python -m devops_toolkit`. Read [operations](operations.md) for stop controls and permissions. No new commands have been executed in this revision.

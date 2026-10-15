@@ -315,10 +315,12 @@ def incident(kube, args):
                                            "file": filename})
                 except QueryError:
                     report["unavailable"].append("logs:" + metadata["name"] + "/" + container["name"])
+    from .recovery import fingerprint
     for deployment in datasets["deployments"][:100]:
         metadata, status = deployment.get("metadata", {}), deployment.get("status", {})
         report["deployments"].append({
-            "name": metadata.get("name"), "generation": metadata.get("generation"),
+            "name": metadata.get("name"), "uid": metadata.get("uid"), "generation": metadata.get("generation"),
+            "template_sha256": fingerprint(deployment.get("spec", {}).get("template", {})),
             "observed_generation": status.get("observedGeneration"),
             "desired": deployment.get("spec", {}).get("replicas", 1),
             "ready": status.get("readyReplicas", 0), "updated": status.get("updatedReplicas", 0),
@@ -345,27 +347,26 @@ def incident(kube, args):
     return directory, report
 
 
-def main(argv=None):
+def _main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
-    if arguments and arguments[0] in {"diagnose", "recover", "watch-recovery", "repair", "demo"}:
-        if arguments[0] == "demo":
-            from .demo import main as command_main
-        elif arguments[0] == "diagnose":
-            from .diagnose import main as command_main
-        elif arguments[0] == "recover":
-            from .recovery import main as command_main
-        elif arguments[0] == "repair":
-            from .repair import main as command_main
-        else:
-            from .watch_recovery import main as command_main
-        return command_main(arguments[1:])
-    parser = argparse.ArgumentParser(prog="python -m devops_toolkit")
+    modules = {"diagnose": "diagnose", "recover": "recovery", "watch-recovery": "watch_recovery",
+               "repair": "repair", "demo": "demo", "policy": "policy", "timeline": "timeline",
+               "release-check": "release_check"}
+    if arguments and arguments[0] in modules:
+        from importlib import import_module
+        return import_module("." + modules[arguments[0]], __package__).main(arguments[1:])
+    parser = argparse.ArgumentParser(prog="devops-toolkit", epilog="Operational commands support --notify-config PATH for optional outcome alerts. See docs/alerts.md.")
+    from . import __version__
+    parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("repair", help="Monitor and restore approved container settings, replicas or Service selector")
     subcommands.add_parser("demo", help="Create a disposable local kind recovery demonstration")
     subcommands.add_parser("diagnose", help="Read workload symptoms and recommended actions")
     subcommands.add_parser("recover", help="Preview or execute policy-bound image recovery")
     subcommands.add_parser("watch-recovery", help="Monitor one rollout and automatically recover approved failure")
+    subcommands.add_parser("policy", help="Create private repair policy from live UIDs and your approved fix")
+    subcommands.add_parser("timeline", help="Correlate saved snapshots and scoped repair audits offline")
+    subcommands.add_parser("release-check", help="Explain image, config, capacity, Service, availability and recovery risks")
     for name in ("preflight", "incident"):
         command = subcommands.add_parser(name, help=(
             "Check deployment configuration" if name == "preflight"
@@ -434,3 +435,8 @@ def main(argv=None):
         print("Unable to complete: check context, permissions, input shape and a new output path. "
               "No cluster changes were made.", file=sys.stderr)
         return 2
+
+
+def main(argv=None):
+    from .alerts import invoke
+    return invoke(list(sys.argv[1:] if argv is None else argv), _main)

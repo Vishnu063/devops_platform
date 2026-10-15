@@ -86,3 +86,5 @@ New snapshots store pod and event UIDs. Older snapshots without them are accepte
 - Runtime image IDs, exact per-container image mapping, scheduler decisions and automatic root-cause analysis are outside this version.
 
 Implementation: `devops_toolkit/compare.py`. Regression tests: `tests/test_compare.py`. Tests and real-cluster verification remain pending.
+
+New incident snapshots include a Deployment pod-template fingerprint. When both snapshots contain it, comparison highlights a changed fingerprint even if image and replica counts stayed the same. It does not print template values or infer which field caused the change. Legacy snapshots without this field remain accepted.

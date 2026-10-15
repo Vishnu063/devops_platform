@@ -1,0 +1,4 @@
+{
+  "provider": "webhook",
+  "url_env": "DEVOPS_ALERT_WEBHOOK"
+}

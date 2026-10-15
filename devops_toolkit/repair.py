@@ -14,6 +14,7 @@ import time
 
 from .recovery import PREFIX, fingerprint, audit_write, recovered
 from .watch_recovery import failed_rollout
+from .controls import ensure_enabled
 
 FIELDS = {'image', 'resources', 'envFrom', 'env', 'readinessProbe',
           'livenessProbe', 'startupProbe', 'securityContext'}
@@ -74,6 +75,7 @@ def check_expiry(p):
 
 def plan(obj, namespace, p, hpas, *, require_failure=True):
     check_expiry(p)
+    ensure_enabled(namespace, p["namespace_uid"])
     m, spec = obj['metadata'], obj['spec']
     if (obj['kind'], m['name'], m['namespace'], m['uid']) != (p['kind'], p['name'], p['namespace'], p['uid']):
         raise ValueError('Target changed')
@@ -165,10 +167,11 @@ def monitor(path, execute=False, audit=None, interval=15, max_wait=900, timeout=
                 # response never triggers a retry. Do not log potentially secret field values.
                 fd = os.open(audit, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
                 with os.fdopen(fd, 'w') as stream:
-                    audit_write(stream, 'intent', policy_sha256=policy_hash, uid=p['uid'], action=p['action'])
+                    audit_write(stream, 'intent', policy_sha256=policy_hash, uid=p['uid'], action=p['action'], context=p['context'], namespace=p['namespace'], kind=p['kind'], target=p['name'])
                     try:
                         if fingerprint(load_policy(path)) != policy_hash:
                             raise ValueError('Policy changed before patch')
+                        ensure_enabled(kube.get('namespace', p['namespace']), p['namespace_uid'])
                         applied = json.loads(kube.run('patch', p['kind'], p['name'], '--type=json', '-p', json.dumps(patch), '-o', 'json'))
                         audit_write(stream, 'patch_acknowledged')
                         if applied['spec'] != desired or applied['metadata']['uid'] != p['uid']:
