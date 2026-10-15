@@ -1,4 +1,7 @@
-# Set this to a successful CI commit SHA through a reviewed pull request.
+# Copy the approved digest from the release-evidence artifact through a reviewed PR.
 image:
   repository: ghcr.io/vishnu063/devops_platform
   tag: ""
+  digest: ""
+# Keep false for the single-node lab. Production requires the multi-zone profile.
+production: false

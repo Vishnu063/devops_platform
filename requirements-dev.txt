@@ -1,1 +1,2 @@
-coverage==7.10.7
+-r requirements.txt
+coverage==7.10.7 --hash=sha256:314f2c326ded3f4b09be11bc282eb2fc861184bc95748ae67b360ac962770be7

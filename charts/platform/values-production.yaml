@@ -1,0 +1,21 @@
+# Requires a real multi-zone cluster, metrics-server and an approved image digest.
+production: true
+replicaCount: 3
+image:
+  tag: ""
+  digest: ""
+pdb:
+  minAvailable: 2
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+resources:
+  requests:
+    cpu: 250m
+    memory: 128Mi
+  limits:
+    cpu: "1"
+    memory: 256Mi
+# Public exposure remains opt-in. Configure ingress values only for your controller.

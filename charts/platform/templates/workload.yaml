@@ -3,9 +3,11 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   revisionHistoryLimit: 3
-  progressDeadlineSeconds: 120
+  progressDeadlineSeconds: 180
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -19,19 +21,39 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 35
       automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/arch: amd64
+        kubernetes.io/os: linux
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
+          whenUnsatisfiable: {{ ternary "DoNotSchedule" "ScheduleAnyway" .Values.production }}
+          {{- if .Values.production }}
+          minDomains: 3
+          {{- end }}
           labelSelector:
             matchLabels:
               app: {{ .Release.Name }}
+        {{- if .Values.production }}
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          minDomains: 2
+          labelSelector:
+            matchLabels:
+              app: {{ .Release.Name }}
+        {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -46,6 +68,13 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          lifecycle:
+            preStop:
+              exec:
+                command: ["python", "-c", "import time; time.sleep(5)"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           startupProbe:
@@ -58,14 +87,19 @@ spec:
             httpGet:
               path: /health/ready
               port: http
-            initialDelaySeconds: 2
-            periodSeconds: 5
+            periodSeconds: 3
+            failureThreshold: 1
           livenessProbe:
             httpGet:
               path: /health/live
               port: http
-            initialDelaySeconds: 5
             periodSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
 ---
 apiVersion: v1
 kind: Service
@@ -86,7 +120,7 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ .Release.Name }}
 spec:
-  minAvailable: 1
+  minAvailable: {{ .Values.pdb.minAvailable }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}

@@ -4,7 +4,7 @@ Follow the release path in this order. At each stage, run the commands, inspect 
 
 | Stage | Topics | Practical exercise |
 | --- | --- | --- |
-| 1. App and Git | HTTP, health/readiness, logs, branch/PR/revert | Explain one request and one reviewed change |
+| 1. App and Git | Flask, Gunicorn, HTTP, health/readiness, logs, branch/PR/revert | Explain one request and one reviewed change |
 | 2. Docker | Layers, build context, UID, health check | Build, inspect, run, stop and troubleshoot |
 | 3. CI | Jobs, dependencies, permissions, artifacts | Explain why scan failure prevents publication |
 | 4. Security | Secret scanning, SAST, CVEs, coverage gate, SBOM | Show an actual report and remediate a finding |
@@ -19,11 +19,11 @@ Follow the release path in this order. At each stage, run the commands, inspect 
 
 1. What problem does this pipeline solve and why use one small service?
 2. What is the difference between readiness and liveness in this service?
-3. Which scanners are blocking, and which require manual execution?
+3. What runs in check-only mode, and which additional gates are required to publish?
 4. Why is a public repository not enough to guarantee a public GHCR image?
 5. Why are two replicas on one node insufficient for high availability?
 6. What happens if the new pod never becomes ready?
-7. How do you correlate a running version with its source commit?
+7. How do you correlate a running digest with its source commit, signature and scan evidence?
 8. Why revert Git rather than making a permanent imperative change in Argo?
 9. What does Terraform state contain, and how would a team protect it?
 10. What are the current limitations and what did you actually verify?

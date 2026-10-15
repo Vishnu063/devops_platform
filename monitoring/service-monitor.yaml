@@ -1,4 +1,4 @@
-# Requires Prometheus Operator CRDs (for example kube-prometheus-stack).
+# Requires Prometheus Operator and namespace/label selectors matching this stack.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -14,6 +14,7 @@ spec:
     - port: http
       path: /metrics
       interval: 15s
+      scrapeTimeout: 5s
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -32,4 +33,30 @@ spec:
           labels:
             severity: warning
           annotations:
-            summary: Platform metrics endpoint is unreachable
+            summary: A platform metrics target is unreachable
+        - alert: PlatformTargetsMissing
+          expr: absent(up{namespace="platform",service="platform"})
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Prometheus has no platform targets
+        - alert: PlatformHighErrorRate
+          expr: |
+            sum(rate(platform_http_requests_total{namespace="platform",status=~"5.."}[5m]))
+            / clamp_min(sum(rate(platform_http_requests_total{namespace="platform"}[5m])), 0.001) > 0.01
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Platform HTTP 5xx rate is above one percent
+        - alert: PlatformHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le) (rate(platform_http_request_duration_seconds_bucket{namespace="platform",route="/"}[5m]))
+            ) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Platform p95 latency is above 500 milliseconds

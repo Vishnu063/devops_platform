@@ -14,3 +14,7 @@ coverage.xml
 reports/
 .scannerwork/
 ansible/inventory.local
+.venv/
+platform-image.tar
+ansible/*.local
+kubeconfig*

@@ -1,45 +1,33 @@
-# Deployment notes
+# Deployment readiness
 
-## Implemented, not yet verified
+Repository safeguards are implemented. Runtime and environment validation are still pending.
 
-- Helm accepts either a full Git commit SHA tag or a valid sha256 digest. Digest wins when both are supplied.
-- A startup probe allows up to 30 seconds before liveness/readiness checks begin.
-- Replica placement prefers different hosts when capacity exists. It remains schedulable on one node, so this is not an HA guarantee.
-- NetworkPolicy denies outbound traffic from the API and limits inbound traffic to labeled Prometheus pods in the monitoring namespace.
-- Ingress-controller access is disabled by default; enable it only after matching its namespace and pod labels.
-- No tests, scans, render checks or deployment exercises were run for these changes.
+| Area | In the repository | Still required |
+| --- | --- | --- |
+| Runtime | Flask, Gunicorn, graceful shutdown, restricted container | Execute tests, build, load and shutdown checks |
+| Dependencies | Exact versions, wheel hashes, image/action pins | Run vulnerability scans and maintain pins |
+| Release | Same image across gates, fail-closed publication, signing and SBOM attestation | Configure tokens and environment reviewers; verify an actual release |
+| Kubernetes | Probes, resource limits, PDB, network isolation, HPA and multi-zone profile | Validate chart rendering and behavior on the target cluster |
+| GitOps | Restricted project and digest-based promotion | Configure access and prove release/rollback |
+| Public access | Optional root-only Ingress and TLS-secret reference | Controller, DNS, certificates, HTTPS policy, rate limits and access controls |
+| Infrastructure | Isolated EC2 lab and backend example | Choose/provision HA infrastructure and protect state |
+| Monitoring | Request/latency metrics, discovery/down/error/latency alerts, dashboard | Confirm scrape selectors, receivers and measured thresholds |
+| Operations | Recovery guidance and incident exercises | Owners, SLOs, capacity, alert delivery and recovery evidence |
 
-## Image identity
+## Deployment profile requirements
 
-After building and pushing, obtain the image digest from the registry, inspect that it belongs to the intended CI build, and record it in gitops/release.yaml:
+The production Helm profile requires at least three schedulable Linux amd64 nodes across two zones. It uses strict spreading and requests three to six replicas. Keep spare capacity for a rolling update. Metrics-server and a NetworkPolicy-enforcing CNI are required.
 
-```yaml
-image:
-  repository: ghcr.io/vishnu063/devops_platform
-  tag: ""
-  digest: sha256:REPLACE_WITH_THE_ACTUAL_64_CHARACTER_DIGEST
-```
+The default AWS node does not meet these requirements. No production cluster is automatically created.
 
-The example above is intentionally invalid until replaced. A digest identifies immutable content, but does not establish who built it or whether it passed security checks. Review the build and scan evidence separately. Signing and admission enforcement are not implemented.
+## Remaining release policy work
 
-## Network boundaries
+Configure GitHub branch/environment protection before publishing. The checks remain manual-only. Cluster-side signature/admission enforcement is not included, so an administrator could bypass GitOps and deploy another image. Restrict cluster write access and install an appropriate admission policy before requiring enforcement.
 
-The CNI must enforce Kubernetes NetworkPolicy. The policy permits only TCP 8080 from Prometheus pods labeled app.kubernetes.io/name=prometheus in namespace monitoring. Adjust selectors to your actual stack. It does not distinguish HTTP paths; monitoring pods can access all API routes.
+## Validation record
 
-The service performs no outbound calls, so it needs no DNS exception. Image pulls happen through the node and are not API-container egress. If dependencies are added, add specific egress rules as part of that change.
+Completed: file-by-file source/configuration review; upstream action/image references resolved; Python wheels downloaded and hashes recorded; Python/plain-YAML/JSON/Bash syntax checked without executing the application.
 
-Port forwarding remains the operator access method. No public Ingress, hostname or TLS certificate is supplied. NetworkPolicy is not a substitute for authentication or TLS.
+Not executed: unit/integration tests, coverage measurement, security scanner engines, Docker builds, Helm/Terraform runtime validation, cloud apply or live operational exercises.
 
-## Open work
-
-| Requirement | Outstanding evidence or implementation |
-| --- | --- |
-| Code and manifests | Execute tests, coverage, Helm rendering and Terraform validation |
-| Supply chain | Verify tool/image references, pin digests and action SHAs, scan, sign and enforce policy |
-| Release gates | Enable automatic checks and branch protection; require external gate results for the release SHA |
-| Infrastructure | Choose HA topology, capacity, state backend, recovery strategy and cost controls |
-| Public access | Configure a real domain, TLS, ingress, access control and rate limits if needed |
-| Reliability | Exercise rollouts, rollback, node loss, alert delivery and load behavior |
-| Operations | Define owners, SLOs, escalation and measured recovery objectives |
-
-Production readiness remains pending until the checks above have been completed in the target environment.
+Do not label a deployment production-ready until these checks pass in the chosen environment and its operating requirements are documented.

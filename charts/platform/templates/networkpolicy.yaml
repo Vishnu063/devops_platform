@@ -7,10 +7,8 @@ spec:
   podSelector:
     matchLabels:
       app: {{ .Release.Name }}
-  policyTypes:
-    - Ingress
-    - Egress
-  # This stateless service needs no outbound connections, including DNS.
+  policyTypes: [Ingress, Egress]
+  # The API has no outbound dependencies.
   egress: []
   ingress:
     - from:
@@ -23,14 +21,17 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
-    {{- if .Values.networkPolicy.ingress.enabled }}
+    {{- if .Values.ingress.enabled }}
+    {{- if not .Values.ingress.controllerPodLabels }}
+    {{- fail "Set ingress.controllerPodLabels to match your ingress controller" }}
+    {{- end }}
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingress.namespace | quote }}
+              kubernetes.io/metadata.name: {{ required "Set ingress.controllerNamespace" .Values.ingress.controllerNamespace | quote }}
           podSelector:
             matchLabels:
-              {{- toYaml .Values.networkPolicy.ingress.podLabels | nindent 14 }}
+              {{- toYaml .Values.ingress.controllerPodLabels | nindent 14 }}
       ports:
         - protocol: TCP
           port: 8080

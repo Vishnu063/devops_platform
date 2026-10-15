@@ -3,7 +3,23 @@ rules:
     languages: [python]
     severity: ERROR
     message: Avoid shell execution; pass argument arrays without shell=True.
-    patterns:
-      - pattern-either:
-          - pattern: subprocess.$FUNC(..., shell=True, ...)
-          - pattern: os.system(...)
+    pattern-either:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+      - pattern: os.system(...)
+  - id: no-debug-server
+    languages: [python]
+    severity: ERROR
+    message: Do not enable a debug server.
+    pattern: $APP.run(..., debug=True, ...)
+  - id: no-insecure-tls-client
+    languages: [python]
+    severity: ERROR
+    message: Preserve server certificate verification.
+    pattern: requests.$FUNC(..., verify=False, ...)
+  - id: no-unsafe-python-deserialization
+    languages: [python]
+    severity: ERROR
+    message: Do not deserialize untrusted Python objects.
+    pattern-either:
+      - pattern: pickle.loads(...)
+      - pattern: pickle.load(...)

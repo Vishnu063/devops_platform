@@ -1,24 +1,61 @@
 ---
-- name: Configure a single-node Kubernetes lab
+- name: Configure the single-node lab
   hosts: lab
   become: true
   vars:
-    k3s_version: v1.33.5+k3s1
+    k3s_version: v1.37.1+k3s1
+    k3s_installer_commit: 356c025475bbefaa09cf0d7e48e8e2adbbde57db
+  handlers:
+    - name: Restart k3s
+      ansible.builtin.systemd:
+        name: k3s
+        state: restarted
   tasks:
-    - name: Download versioned k3s installer
+    - name: Require the supported lab platform
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.architecture == 'x86_64'
+          - ansible_facts.service_mgr == 'systemd'
+        fail_msg: This playbook targets Linux amd64 with systemd.
+    - name: Install the checksum-verified k3s binary
       ansible.builtin.get_url:
-        url: https://get.k3s.io
+        url: "https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s"
+        dest: /usr/local/bin/k3s
+        checksum: "sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-amd64.txt"
+        mode: "0755"
+      notify: Restart k3s
+    - name: Download the pinned service installer
+      ansible.builtin.get_url:
+        url: "https://raw.githubusercontent.com/k3s-io/k3s/{{ k3s_installer_commit }}/install.sh"
         dest: /tmp/install-k3s.sh
+        checksum: sha256:ed01f89fd977bf20ac1516bbebf8370bf3ddbaa55dac8aba610956a4c78cc00b
         mode: "0700"
-    - name: Install k3s without bundled ingress and load balancer
+    - name: Create the k3s configuration directory
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: "0700"
+    - name: Configure the lab node
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        mode: "0600"
+        content: |
+          disable:
+            - traefik
+            - servicelb
+          write-kubeconfig-mode: "0600"
+          secrets-encryption: true
+      notify: Restart k3s
+    - name: Register the k3s service
       ansible.builtin.command: /tmp/install-k3s.sh
       environment:
-        INSTALL_K3S_VERSION: "{{ k3s_version }}"
-        INSTALL_K3S_EXEC: "server --disable traefik --disable servicelb --write-kubeconfig-mode 600"
+        INSTALL_K3S_SKIP_DOWNLOAD: "true"
+        INSTALL_K3S_SKIP_START: "true"
       args:
-        creates: /usr/local/bin/k3s
-    - name: Ensure Kubernetes service is running
+        creates: /etc/systemd/system/k3s.service
+    - name: Start k3s
       ansible.builtin.systemd:
         name: k3s
         state: started
         enabled: true
+        daemon_reload: true

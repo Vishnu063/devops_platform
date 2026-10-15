@@ -1,7 +1,11 @@
-.PHONY: test run image
+.PHONY: install test run image
+install:
+	python -m pip install --only-binary=:all: --require-hashes -r requirements-dev.txt
 test:
-	python -m unittest discover -s tests -v
+	coverage run -m unittest discover -s tests -v
+	coverage xml
+	coverage report --fail-under=85
 run:
-	python -m app.server
+	gunicorn --config gunicorn.conf.py 'app.server:create_app()'
 image:
-	docker build -t devops-platform:local .
+	docker build --platform linux/amd64 -t devops-platform:local .

@@ -4,7 +4,7 @@ metadata:
   name: devops-platform
   namespace: argocd
 spec:
-  project: default
+  project: platform
   source:
     repoURL: https://github.com/Vishnu063/devops_platform.git
     targetRevision: main
@@ -16,6 +16,7 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: platform
+  # Sync remains manual; pruning requires an explicit operator decision.
   syncPolicy:
     syncOptions:
-      - CreateNamespace=true
+      - FailOnSharedResource=true

@@ -1,79 +1,86 @@
 # DevOps Platform
 
-A DevSecOps project built around a small Python API. The main focus is the release process: testing changes, scanning containers, publishing images and deploying through Git.
+A small Flask API with a complete delivery path: source checks, container scanning, quality gates, signed images and GitOps releases.
 
-**Project status:** Source and configuration are in place. Build, test, security-scan and deployment results are pending. No AWS resources have been provisioned.
+**Status:** Repository review and hardening are complete for this revision. Unit tests, scanner execution, image builds and deployment validation remain pending. No AWS resources have been provisioned.
 
-## Architecture
+## Delivery flow
 
 ```mermaid
 flowchart TD
-  A["Pull request"] --> B["Tests, Gitleaks, Semgrep"]
-  B --> C["Helm and Terraform validation"]
-  C --> D["Build, Trivy, SBOM"]
-  D --> E["GHCR commit image"]
-  E --> F["Reviewed release PR"]
-  F --> G["Argo CD manual sync"]
-  G --> H["Kubernetes API service"]
-  H --> I["Prometheus and Grafana"]
+  A["Manual CI run"] --> B["Tests, secrets, SAST, manifest checks"]
+  B --> C["Build once, Trivy, SBOM"]
+  C --> D["SonarQube and Snyk"]
+  D --> E["Approved publish job"]
+  E --> F["GHCR digest, signature and SBOM attestation"]
+  F --> G["Reviewed release PR"]
+  G --> H["Argo CD manual sync"]
+  H --> I["Kubernetes and monitoring"]
 ```
 
-GitHub Actions is the default CI runner. Jenkins is included as an alternative CI runner. SonarQube and Snyk have a separate manual workflow because they need external configuration. Their results must be checked separately before release.
+CI stays manual until initial validation is complete. A check-only run does not publish. A release run requires SonarQube and Snyk to pass before the saved image is published. Missing credentials stop the release.
 
-## Local start
+## Run locally
 
-Requires Python 3.12, or Docker with Compose.
+The dependency lock targets **CPython 3.12 on Linux amd64**. Docker Compose also selects amd64.
 
 ```bash
-python -m app.server
-# In a second terminal:
+docker compose up --build -d
 curl http://127.0.0.1:8080/
-curl http://127.0.0.1:8080/health/ready
+docker compose down
 ```
 
-Or run `docker compose up --build -d`. The Compose port binds only to localhost. Stop with `docker compose down`.
-
-Routes: `/` release identity, `/health/live` process health, `/health/ready` readiness, `/metrics` Prometheus availability gauge. The app has no external dependencies or database; readiness therefore checks only this service. Logs go to stdout.
-
-## Running tests
+For a local Python environment:
 
 ```bash
-python -m pip install -r requirements-dev.txt
-coverage run --source=app -m unittest discover -s tests -v
-coverage xml
-coverage report --fail-under=80
+python -m venv .venv
+source .venv/bin/activate
+make install
+make run
 ```
 
-CI currently runs through `workflow_dispatch`. Enable push and pull-request triggers in `.github/workflows/ci.yml` after the initial setup. See [setup](docs/setup.md), [runbook](docs/runbook.md), [learning guide](docs/learning.md), and [design decisions](docs/decisions.md).
+Gunicorn serves the application with one process and four threads per pod. Request metrics are process-local; scale pods rather than increasing worker processes.
 
-## Tooling
-
-| Component | Purpose |
+| Endpoint | Purpose |
 | --- | --- |
-| GitHub Actions / Jenkins | Test, scan, build and publish |
-| Gitleaks | Scan Git history for secrets with redacted output |
-| Semgrep | Local rule rejecting shell execution in Python |
-| SonarQube | Code analysis, coverage and blocking quality gate |
-| Trivy | Fail on fixable high/critical image findings; generate SBOM |
-| Snyk | Additional authenticated container vulnerability scan |
-| Helm | Rolling updates, probes, limits, restricted container, PDB |
-| Argo CD | Explicit human sync from a reviewed release file |
-| Terraform | Optional isolated AWS VPC and EC2 lab |
-| Ansible | Versioned single-node k3s installation |
-| Prometheus / Grafana | Scrape availability, CPU and an alert |
+| GET / | Service name and source version |
+| GET /health/live | Process health |
+| GET /health/ready | Service readiness |
+| GET /metrics | Request counters and latency histogram |
 
-## Releasing a change
+The service is stateless and has no downstream dependency. Logs omit query strings and use matched routes to avoid logging arbitrary paths. Optional Ingress exposes only the exact root path; health and metrics stay internal.
 
-Publish a successful CI commit image. Set `gitops/release.yaml` to that full SHA through a PR. Run the external quality workflow on the **same SHA** and review its result before approving release. Argo CD watches main but does not auto-sync. Never deploy an empty tag or use `latest`.
+## Project layout
 
-The first GHCR package may be private even though this repository is public. Make the package public before deploying, or configure an image pull secret locally.
+| Path | Contents |
+| --- | --- |
+| app/, tests/ | API and unit tests |
+| ci/ | Shared checks used by GitHub Actions and Jenkins |
+| .github/workflows/ | Check, release and reusable quality jobs |
+| charts/platform/ | Helm chart and multi-zone deployment profile |
+| gitops/ | Restricted Argo project and release configuration |
+| infra/, ansible/ | Optional single-node AWS lab |
+| monitoring/ | Scrape configuration, alerts and dashboard |
+| docs/ | Setup, decisions, runbook, learning and review notes |
 
-## Deployment safeguards
+## Release controls
 
-The Helm chart accepts image digests, validates full commit tags, includes a startup probe and soft host spreading, and applies restrictive API network policies. Read [readiness and remaining work](docs/readiness.md) before deployment. These changes are untested.
+GitHub Actions is the publishing authority. Jenkins runs the same source, image and external quality checks, but does not publish.
 
-## Current limitations
+Releases use:
+- Hash-locked Python dependencies and digest-pinned base/tool images.
+- Git-history scanning with Gitleaks and local Semgrep rules.
+- Trivy and Snyk gates for high/critical container vulnerabilities.
+- SonarQube analysis and a blocking quality gate.
+- The same saved image archive across scanning and publication.
+- Cosign keyless signing and an SBOM attestation on the registry digest.
 
-Single-node k3s is a cost-conscious lab, not a highly available production cluster. Two replicas on one node cannot survive node failure. No EKS control plane, NAT gateway, public ingress, database or cloud apply is enabled automatically. AWS EC2, storage and public IPv4 can incur charges; confirm your account eligibility before provisioning.
+Configure the GitHub `production` environment with required reviewers and main-only deployment rules. The workflow declaration alone does not enforce those account settings. Signature verification is a release-review step; cluster admission enforcement is not included.
 
-Tool versions are explicit where practical. Base image tags and some upstream CI references remain mutable; base-image/action SHA pinning and signature verification are improvements to make after a successful baseline run. Scanners can fail as vulnerability databases change. Review and resolve findings before releasing.
+## Deployment profiles
+
+The default chart runs a small lab. The production profile requires an approved image digest, at least three eligible nodes across two zones, metrics-server and a NetworkPolicy-enforcing CNI. It adds strict placement and autoscaling; it does not provision that infrastructure.
+
+Terraform and Ansible deliberately remain a **single-node lab**. They are not a production cluster or a free-cost guarantee. EC2, storage and public IPv4 may be billed.
+
+Start with [setup](docs/setup.md), [design decisions](docs/decisions.md), [runbook](docs/runbook.md), [learning](docs/learning.md), and [review findings](docs/review.md). [Deployment notes](docs/readiness.md) list the evidence still needed before production use.

@@ -1,0 +1,12 @@
+# Copy to backend.tf only after provisioning and protecting the state bucket.
+# Never commit credentials or state. Bucket versioning and public-access blocking
+# must be configured separately by the bucket administrator.
+terraform {
+  backend "s3" {
+    bucket       = "REPLACE_WITH_EXISTING_STATE_BUCKET"
+    key          = "devops-platform/lab/terraform.tfstate"
+    region       = "ap-south-1"
+    encrypt      = true
+    use_lockfile = true
+  }
+}

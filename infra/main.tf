@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.6, < 2.0"
+  required_version = ">= 1.10, < 2.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.0"
+      version = "= 6.69.0"
     }
   }
 }
@@ -117,7 +117,8 @@ resource "aws_instance" "lab" {
   vpc_security_group_ids      = [aws_security_group.lab.id]
   key_name                    = aws_key_pair.lab.key_name
   metadata_options {
-    http_tokens = "required"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
   }
   root_block_device {
     encrypted   = true

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-platform
+  namespace: argocd
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/Vishnu063/devops_platform.git
+    targetRevision: main
+    path: charts/platform
+    helm:
+      releaseName: platform
+      valueFiles:
+        - values-production.yaml
+        - ../../gitops/release.yaml
+      parameters:
+        - name: production
+          value: "true"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+  syncPolicy:
+    syncOptions:
+      - FailOnSharedResource=true

@@ -1,49 +1,89 @@
 # Setup and release
 
-## 1. GitHub CI
+## Local environment
 
-Open Actions, select CI, select Run workflow on main. It tests and validates before publishing a commit-SHA image to GHCR. No cloud credentials are used.
+Use Docker Compose or CPython 3.12 on Linux amd64. Other architectures need a regenerated dependency lock and a compatible image build. Run `make install` inside a virtual environment, then `make run`.
 
-After you want automatic runs, replace the CI trigger with push on main, pull_request and workflow_dispatch. Configure a main branch ruleset requiring the CI jobs, a reviewed PR, and no force pushes. Enable automatic CI before making these checks required, or PRs will wait indefinitely for checks. Repository code cannot enforce these settings itself.
+## CI configuration
 
-## 2. SonarQube and Snyk
+Create a SonarQube Server project with key `devops-platform` and an HTTPS URL reachable from the runner. Configure its quality gate, including the required new-code coverage and issue thresholds.
 
-Create SonarQube project key `devops-platform` on a server reachable from the runner. Set repository variable `SONAR_HOST_URL` and Actions secret `SONAR_TOKEN`. Configure a quality gate (for example 80% new-code coverage and no new critical issues). The scanner waits for its result.
+Set:
+- Actions secrets: `SONAR_TOKEN`, `SNYK_TOKEN`.
+- Actions variable: `SONAR_HOST_URL`.
+- GitHub environment `production`: required reviewers, main-only branches and no self-approval where available.
+- Main branch rules: reviewed changes, no force push and required checks after automatic CI has been enabled.
 
-Set Actions secret `SNYK_TOKEN` from your Snyk account. Run External quality gates on the same main commit you intend to release. Missing credentials fail explicitly. This integration is not wired as a required standard-CI dependency; enforce its successful result during review. A SonarQube Cloud account additionally needs organization configuration; this supplied config targets Server/Community Build.
+Environment protections and branch rules must be configured in GitHub settings. Without them, the code cannot provide independent approval.
 
-## 3. Local Kubernetes first
+Open Actions → CI → Run workflow. Leave `publish` false for source/image checks. Set it true on main for a release candidate. Nothing runs automatically on a commit at present.
 
-Use an existing local Kubernetes cluster with Helm 3. Build and publish through CI, make the GHCR package public, then:
+The release run executes both external gates against the same source SHA and image archive used by the publisher. It then publishes, signs and attests the digest. If signing fails after a push, the image may exist in GHCR but is not an approved release. Do not promote it.
+
+Artifacts:
+- `source-reports`: coverage and rendered manifests.
+- `security-reports`: Trivy output, SBOM and archive identity.
+- `candidate-image`: short-lived image archive.
+- `release-evidence`: published digest, image identity, SBOM and reports.
+
+The first GHCR package can be private even for a public repository. Make it public or supply a namespace-local image pull secret through `imagePullSecrets`.
+
+## Verify a release
+
+Obtain the full digest reference from `release-evidence/reports/release-image.txt` (the downloaded artifact may omit the outer reports folder). Verify the signature and SBOM attestation with a trusted Cosign installation:
 
 ```bash
-helm upgrade --install platform charts/platform --namespace platform --create-namespace --set image.tag=YOUR_SUCCESSFUL_FULL_COMMIT_SHA --atomic --timeout 120s
+cosign verify --certificate-identity https://github.com/Vishnu063/devops_platform/.github/workflows/ci.yml@refs/heads/main --certificate-oidc-issuer https://token.actions.githubusercontent.com YOUR_IMAGE_AT_DIGEST
+cosign verify-attestation --type cyclonedx --certificate-identity https://github.com/Vishnu063/devops_platform/.github/workflows/ci.yml@refs/heads/main --certificate-oidc-issuer https://token.actions.githubusercontent.com YOUR_IMAGE_AT_DIGEST
+```
+
+Review the workflow result, source SHA and vulnerability reports as well. A signature identifies the workflow that signed the image; it does not independently establish that its code was trustworthy.
+
+## Direct Helm deployment
+
+Use a separate lab namespace and an approved image digest:
+
+```bash
+kubectl apply -f gitops/namespace.yaml
+helm upgrade --install platform charts/platform --namespace platform --set image.digest=YOUR_SHA256_DIGEST --atomic --timeout 180s
 kubectl -n platform rollout status deployment/platform
 kubectl -n platform port-forward service/platform 8080:80
 ```
 
-Open localhost:8080. Do not mix direct Helm releases and Argo ownership in the same namespace. Use the direct Helm route first, remove it with `helm uninstall platform -n platform`, then switch to GitOps.
+The digest value includes the `sha256:` prefix, without the repository. Do not manage the same release with both Helm CLI and Argo CD. Remove the direct Helm release before handing ownership to Argo.
 
-## 4. Argo CD
+For the stricter profile add `-f charts/platform/values-production.yaml` before `--set image.digest=...`. The cluster must have three eligible nodes in at least two labeled zones and spare rollout capacity. HPA requires metrics-server; NetworkPolicy requires an enforcing CNI.
 
-Install Argo CD using its official installation guide. Set the successful SHA in gitops/release.yaml via reviewed PR. Apply gitops/application.yaml to the cluster hosting Argo CD. In Argo CD inspect the diff, sync manually, and wait for Healthy/Synced. This sample uses the default Argo project for one trusted lab; production needs a restricted AppProject.
+## Argo CD
 
-Rollback: revert the release PR to the previous successful image SHA, merge, then sync. This restores Git as the source of truth.
+Install a supported Argo CD release from its official documentation. Apply `gitops/namespace.yaml` and `gitops/project.yaml` as an administrator. The application project cannot create arbitrary cluster resources.
 
-## 5. Monitoring
+Update `gitops/release.yaml` through a reviewed PR with the approved image digest. Apply **one** application manifest:
+- `gitops/application.yaml` for the lab.
+- `gitops/application-production.yaml` for the multi-zone profile.
 
-Install the community kube-prometheus-stack Helm chart as release `monitoring` in namespace `monitoring`. Its default stack can exceed a small EC2 instance; run it locally or size explicitly. Ensure its ServiceMonitor and PrometheusRule namespace selectors include `platform` and its label selectors accept `release: monitoring`.
+Inspect the diff and sync manually. Verify Healthy/Synced and inspect the actual running image digest. Roll back by reverting the release PR and syncing the prior approved digest.
 
-Apply monitoring/service-monitor.yaml after platform namespace exists. Confirm the Prometheus target is UP. Import monitoring/grafana-dashboard.json and select your Prometheus data source. The alert rule needs Alertmanager receiver configuration for notifications; none is supplied because contact credentials are private. Stdout logs are available through kubectl; no unused ELK/Loki stack is included.
+## Network and TLS
 
-## 6. Optional AWS lab
+Default ingress allows only Prometheus pods with the expected label in namespace monitoring. Outbound connections from the API are denied. Match the policy selectors to the real monitoring deployment.
 
-Terraform only creates a VPC, subnet, route, security group, SSH key and encrypted EC2 instance. Authenticate locally with your AWS profile. No AWS credentials belong in Git.
+Public ingress is disabled. To enable it, configure the chart's `ingress` values: a supported controller class, hostname, existing TLS secret, controller namespace and pod labels. Only GET/HEAD root identity is intended for public use; the Ingress route exposes the exact root path. Enforce HTTPS redirects, rate limits and any required authentication at the chosen controller or gateway. Those controller-specific settings are not supplied.
+
+## Monitoring
+
+Install kube-prometheus-stack as release `monitoring` in namespace `monitoring`. Ensure its namespace and label selectors discover ServiceMonitor and PrometheusRule resources in platform. Apply `monitoring/service-monitor.yaml`.
+
+Import the dashboard JSON and select the Prometheus data source. Confirm target discovery, request counters and latency under traffic. Configure Alertmanager receivers privately. Rules without a receiver do not deliver notifications. Default thresholds are starting points, not measured SLOs.
+
+## Optional AWS lab
+
+Authenticate locally using your AWS profile. Inspect account pricing before apply. The supplied Terraform creates only one isolated EC2 lab node and its network.
 
 ```bash
 cd infra
 cp terraform.tfvars.example terraform.tfvars
-# Replace public_key and admin_cidr in your local file before proceeding.
+# Set your public key and current public IPv4 /32 in the local file.
 terraform init
 terraform fmt
 terraform validate
@@ -51,29 +91,22 @@ terraform plan -out=lab.tfplan
 terraform apply lab.tfplan
 ```
 
-Inspect costs and the plan before apply. Copy ansible/inventory.example locally, replace IP and key path. Connect once with SSH and verify the host fingerprint. Run:
+After initialization review and commit `.terraform.lock.hcl` for the target platforms. It is not supplied because provider initialization has not been run. The AMI lookup uses the current matching Ubuntu image; pin an approved AMI before relying on reproducible infrastructure.
+
+For shared state, provision an encrypted, versioned, private S3 bucket separately, copy `infra/backend.tf.example` to `infra/backend.tf`, replace its values, and migrate with `terraform init -migrate-state`. Restrict state and .tflock object permissions. Back up state before migration.
+
+Install Ansible on the control machine. Copy the inventory example to `ansible/inventory.local`, replace the address/key and verify the SSH host fingerprint. Then run:
 
 ```bash
 ansible-playbook -i ansible/inventory.local ansible/k3s.yml
 ```
 
-Install Ansible on your control machine first. k3s version is explicit; check compatibility/security support before provisioning. The basic node is small and is not sized for SonarQube plus monitoring. API access is via SSH and localhost forwarding; port 6443 is not publicly exposed. Run kubectl on the node with sudo, or use an SSH tunnel and a securely copied kubeconfig.
+The playbook verifies the binary checksum and pins the installer source/hash. Recheck the selected k3s release's support and compatibility before deploying. It is a lab installer, not a multi-node cluster lifecycle tool. Use SSH and local forwarding for administration; the security group does not expose the Kubernetes API publicly.
 
-Cleanup after the lab:
+Destroy the lab after use with `terraform destroy` from infra. Keep the state until destruction completes.
 
-```bash
-cd infra
-terraform destroy
-```
+## Jenkins
 
-Keep state locally for a single operator. For teamwork migrate to an encrypted S3 backend with state locking and scoped access; that backend is intentionally not auto-provisioned.
+Use a dedicated trusted main-only multibranch job, a Linux amd64 Docker agent labeled docker, Bash, Git and a full-history checkout. Configure Jenkins SCM trust/discovery settings to exclude untrusted branches and forks; an in-file branch check cannot protect against a malicious Jenkinsfile.
 
-## 7. Jenkins alternative
-
-Use a trusted Linux agent labeled docker with Docker and Git. Configure a multibranch pipeline pointing to Jenkinsfile. Jenkins needs credentials IDs sonar-token (secret text), snyk-token (secret text), ghcr (username/password with a packages-write token), and environment SONAR_HOST_URL.
-
-Use only trusted branches: Docker socket access grants host-level power, and untrusted PR code must not run alongside credentials. Jenkins does not include Terraform/Helm validation from GitHub CI; run those separately before release if choosing Jenkins alone.
-
-## Additional deployment safeguards
-
-See [readiness](readiness.md) for digest releases and network-policy selectors. The monitoring namespace/pod labels must match the real deployment; all other pod ingress and all API egress are denied by default. Public ingress remains disabled. The CNI must enforce these policies. No validation was performed during repository creation or hardening.
+Set credentials `sonar-token` and `snyk-token`, plus environment `SONAR_HOST_URL`. Jenkins invokes the same three ci scripts, archives reports, and cleans the workspace. Publication remains in GitHub Actions so it cannot bypass the release signing and approval path.
