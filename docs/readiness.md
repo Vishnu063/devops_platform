@@ -1,4 +1,4 @@
-# Deployment safeguards and outstanding work
+# Deployment notes
 
 ## Implemented, not yet verified
 
@@ -30,7 +30,7 @@ The service performs no outbound calls, so it needs no DNS exception. Image pull
 
 Port forwarding remains the operator access method. No public Ingress, hostname or TLS certificate is supplied. NetworkPolicy is not a substitute for authentication or TLS.
 
-## Before calling this production-ready
+## Open work
 
 | Requirement | Outstanding evidence or implementation |
 | --- | --- |
@@ -42,4 +42,4 @@ Port forwarding remains the operator access method. No public Ingress, hostname 
 | Reliability | Exercise rollouts, rollback, node loss, alert delivery and load behavior |
 | Operations | Define owners, SLOs, escalation and measured recovery objectives |
 
-This is a hardening increment for a portfolio lab. Completing source files does not establish operational production readiness.
+Production readiness remains pending until the checks above have been completed in the target environment.

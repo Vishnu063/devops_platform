@@ -1,8 +1,8 @@
 # DevOps Platform
 
-A focused DevSecOps portfolio lab: take a small Python release-status API from a pull request to a scanned container and a reviewed Kubernetes release.
+A DevSecOps project built around a small Python API. The main focus is the release process: testing changes, scanning containers, publishing images and deploying through Git.
 
-**Status:** implementation supplied; tests, scanner runs, image builds, Terraform validation and live deployment have not been executed. No AWS resources have been created. This is a personal lab, not evidence of commercial production experience.
+**Project status:** Source and configuration are in place. Build, test, security-scan and deployment results are pending. No AWS resources have been provisioned.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ flowchart TD
   H --> I["Prometheus and Grafana"]
 ```
 
-GitHub Actions is the default CI runner. Jenkins is an alternative for practicing the same delivery flow; running both is unnecessary. SonarQube and Snyk have a separate manual workflow because they need external configuration. The standard CI does **not** imply those two gates passed.
+GitHub Actions is the default CI runner. Jenkins is included as an alternative CI runner. SonarQube and Snyk have a separate manual workflow because they need external configuration. Their results must be checked separately before release.
 
 ## Local start
 
@@ -35,7 +35,7 @@ Or run `docker compose up --build -d`. The Compose port binds only to localhost.
 
 Routes: `/` release identity, `/health/live` process health, `/health/ready` readiness, `/metrics` Prometheus availability gauge. The app has no external dependencies or database; readiness therefore checks only this service. Logs go to stdout.
 
-## Verification when you are ready
+## Running tests
 
 ```bash
 python -m pip install -r requirements-dev.txt
@@ -44,9 +44,9 @@ coverage xml
 coverage report --fail-under=80
 ```
 
-CI is initially manual-only to respect the request not to run tests during creation. Once reviewed, enable push/PR triggers in `.github/workflows/ci.yml`. See [setup](docs/setup.md), [runbook](docs/runbook.md), [learning guide](docs/learning.md), and [design decisions](docs/decisions.md).
+CI currently runs through `workflow_dispatch`. Enable push and pull-request triggers in `.github/workflows/ci.yml` after the initial setup. See [setup](docs/setup.md), [runbook](docs/runbook.md), [learning guide](docs/learning.md), and [design decisions](docs/decisions.md).
 
-## What is included
+## Tooling
 
 | Component | Purpose |
 | --- | --- |
@@ -62,18 +62,18 @@ CI is initially manual-only to respect the request not to run tests during creat
 | Ansible | Versioned single-node k3s installation |
 | Prometheus / Grafana | Scrape availability, CPU and an alert |
 
-## Release contract
+## Releasing a change
 
-Publish a successful CI commit image. Set `gitops/release.yaml` to that full SHA through a PR. If claiming all security gates passed, run the external quality workflow on the **same SHA** and inspect its result before approving release. Argo CD watches main but does not auto-sync. Never deploy an empty tag or use `latest`.
+Publish a successful CI commit image. Set `gitops/release.yaml` to that full SHA through a PR. Run the external quality workflow on the **same SHA** and review its result before approving release. Argo CD watches main but does not auto-sync. Never deploy an empty tag or use `latest`.
 
 The first GHCR package may be private even though this repository is public. Make the package public before deploying, or configure an image pull secret locally.
 
 ## Deployment safeguards
 
-The Helm chart supports verified image digests, validates full commit tags, includes a startup probe and soft host spreading, and applies restrictive API network policies. Read [readiness and remaining work](docs/readiness.md) before deployment. These changes are untested.
+The Helm chart accepts image digests, validates full commit tags, includes a startup probe and soft host spreading, and applies restrictive API network policies. Read [readiness and remaining work](docs/readiness.md) before deployment. These changes are untested.
 
-## Boundaries
+## Current limitations
 
 Single-node k3s is a cost-conscious lab, not a highly available production cluster. Two replicas on one node cannot survive node failure. No EKS control plane, NAT gateway, public ingress, database or cloud apply is enabled automatically. AWS EC2, storage and public IPv4 can incur charges; confirm your account eligibility before provisioning.
 
-Tool versions are explicit where practical. Base image tags and some upstream CI references remain mutable; base-image/action SHA pinning and signature verification are improvements to make after a successful baseline run. Scanners can fail as vulnerability databases change. Do not bypass findings to obtain a green badge.
+Tool versions are explicit where practical. Base image tags and some upstream CI references remain mutable; base-image/action SHA pinning and signature verification are improvements to make after a successful baseline run. Scanners can fail as vulnerability databases change. Review and resolve findings before releasing.

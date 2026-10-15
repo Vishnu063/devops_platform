@@ -1,8 +1,8 @@
-# Learn and explain the project
+# Project walkthrough
 
-Work in this order. Run and observe each stage before claiming hands-on experience.
+Follow the release path in this order. At each stage, run the commands, inspect the output and keep notes on failures and fixes.
 
-| Stage | Learn | Interview demonstration |
+| Stage | Topics | Practical exercise |
 | --- | --- | --- |
 | 1. App and Git | HTTP, health/readiness, logs, branch/PR/revert | Explain one request and one reviewed change |
 | 2. Docker | Layers, build context, UID, health check | Build, inspect, run, stop and troubleshoot |
@@ -15,7 +15,7 @@ Work in this order. Run and observe each stage before claiming hands-on experien
 | 9. Ansible | Inventory, privilege escalation, idempotence | Explain why rerunning does not reinstall k3s |
 | 10. Incident response | Symptoms, evidence, cause, recovery | Present one real lab incident with timestamps |
 
-## Questions you should answer
+## Review questions
 
 1. What problem does this pipeline solve and why use one small service?
 2. What is the difference between readiness and liveness in this service?
@@ -28,4 +28,4 @@ Work in this order. Run and observe each stage before claiming hands-on experien
 9. What does Terraform state contain, and how would a team protect it?
 10. What are the current limitations and what did you actually verify?
 
-Describe this as a personal DevSecOps project. It can demonstrate skills relevant to 3–4-year roles; it does not replace 3–4 years of production experience.
+Keep a short record of completed exercises: the commit used, commands run, observed result and any fixes. Use those records when explaining the project.
