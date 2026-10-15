@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "example": true,
+  "context": "example-lab",
+  "namespace": "platform",
+  "created_at": "2026-10-15T12:10:00+00:00",
+  "pods": [
+    {
+      "name": "api-old-1",
+      "uid": "pod-1",
+      "phase": "Running",
+      "images": [
+        "ghcr.io/example/api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "containers": [
+        {
+          "name": "api",
+          "ready": false,
+          "restarts": 4,
+          "reason": "CrashLoopBackOff"
+        }
+      ]
+    },
+    {
+      "name": "api-old-2",
+      "uid": "pod-2",
+      "phase": "Running",
+      "images": [
+        "ghcr.io/example/api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "containers": [
+        {
+          "name": "api",
+          "ready": false,
+          "restarts": 2,
+          "reason": "CrashLoopBackOff"
+        }
+      ]
+    },
+    {
+      "name": "api-new-1",
+      "uid": "pod-4",
+      "phase": "Running",
+      "images": [
+        "ghcr.io/example/api@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ],
+      "containers": [
+        {
+          "name": "api",
+          "ready": true,
+          "restarts": 0,
+          "reason": null
+        }
+      ]
+    }
+  ],
+  "deployments": [
+    {
+      "name": "platform",
+      "desired": 3,
+      "ready": 1,
+      "updated": 1,
+      "images": [
+        "ghcr.io/example/api@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "uid": "warning-1",
+      "type": "Warning",
+      "reason": "BackOff",
+      "object": "api-old-1",
+      "count": 4
+    }
+  ],
+  "unavailable": [],
+  "pod_count": 3,
+  "pods_truncated": false,
+  "deployment_count": 1,
+  "event_count": 1
+}

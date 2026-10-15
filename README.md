@@ -1,8 +1,34 @@
 # DevOps Platform
 
-A DevOps project with two practical tools: **check a deployment before releasing it** and **collect evidence when something breaks**. A small Flask API provides the delivery target, with security gates, signed images and GitOps deployment.
+A DevOps project that helps answer three questions: **Is this deployment configured correctly? What is happening now? What changed before the failure?** A small Flask API provides the delivery target, with security gates, signed images and GitOps deployment.
 
 **Status:** Repository review and hardening are complete for this revision. Unit tests, scanner execution, image builds and deployment validation remain pending. No AWS resources have been provisioned.
+
+## What changed before the failure?
+
+Save an incident snapshot before a release and another afterwards. Compare them to spot changed images, fewer ready replicas, increased restarts and newly captured warnings.
+
+**Example:** a deployment had **3 ready replicas** before a release and **1 afterwards**, its image changed, and a container's restart counter increased. The tool highlights those differences so you know where to investigate. It does not claim the deployment caused the failure.
+
+Try the included sample without a cluster or credentials:
+
+```bash
+python -m devops_toolkit compare examples/snapshots/before.json examples/snapshots/after.json
+```
+
+The sample data is illustrative, not real test evidence. To compare your own saved snapshots:
+
+```bash
+python -m devops_toolkit compare before/report.json after/report.json
+```
+
+| Command | When to use it | What you get |
+| --- | --- | --- |
+| `preflight` | Before deployment | Configuration findings and estimated capacity |
+| `incident` | Before a release or during a problem | A private snapshot of the namespace |
+| `compare` | After collecting two snapshots | A readable summary of observed changes |
+
+Comparison is offline and read-only. It requires only Python 3.12. Partial snapshots are flagged; a missing record is not automatically treated as a deleted resource.
 
 ## Start here
 
@@ -22,7 +48,7 @@ Checks image digests, resource settings, probes, required configuration and esti
 python -m devops_toolkit incident --context YOUR_CONTEXT --namespace platform
 ```
 
-Creates a private local report with pod health, restarts, deployment state and event reasons. Logs are off by default. Both commands are read-only and require Python 3.12, kubectl and authorized cluster access.
+Creates a private local report with pod health, restarts, deployment state and event reasons. Logs are off by default. Preflight and incident collection are read-only and require Python 3.12, kubectl and authorized cluster access. Offline comparison needs neither kubectl nor cluster access.
 
 [Commands, examples and explanations →](docs/toolkit.md)
 

@@ -1,10 +1,11 @@
 # DevOps toolkit: start here
 
-This toolkit helps with two everyday jobs:
+This toolkit helps with three everyday jobs:
 1. Find obvious problems before a deployment.
-2. Collect a useful snapshot when an application is unhealthy.
+2. Collect a useful snapshot before a release or when an application is unhealthy.
+3. Compare snapshots to see what changed.
 
-It runs on your machine using Python and your existing kubectl access. It does not install anything in the cluster, deploy, delete, roll back, switch contexts or upload reports.
+It runs on your machine using Python. Preflight and collection use existing kubectl access; comparison reads local files only. It does not install anything in the cluster, deploy, delete, roll back, switch contexts or upload reports.
 
 **Status:** implemented, with tests supplied for later execution. Live cluster behavior has not been verified.
 
@@ -147,3 +148,13 @@ Commands use argument arrays without a shell. Kubernetes writes are not implemen
 4. Explain why missing permissions produce UNKNOWN and why a capacity estimate is not a scheduling guarantee.
 
 Regression tests are in `tests/test_toolkit.py`. They use fake cluster data and mocked processes. The existing test discovery command includes them; they have not been run during implementation. The current coverage threshold measures the API package, not toolkit coverage.
+
+## 3. Compare snapshots
+
+```bash
+python -m devops_toolkit compare before/report.json after/report.json
+```
+
+Comparison needs no cluster or credentials. It highlights observed changes in images, replica counts, pod state, restarts and warning events. Use `--output reports/comparison.json` for a new private JSON file, or `--fail-on-change` to return exit code 1 when differences are found. Invalid or incompatible snapshots return 2. Normal successful comparison returns 0, even when differences exist.
+
+See [the comparison guide](compare.md) for the full before/after workflow and limitations.

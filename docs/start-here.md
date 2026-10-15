@@ -4,14 +4,15 @@
 
 A deployment can fail because an image is wrong, a required Secret is missing, probes are absent or the cluster lacks room. During an incident, engineers often repeat the same commands to collect evidence.
 
-This project combines a delivery pipeline with two small operational tools to reduce that repeated work.
+This project combines a delivery pipeline with deployment checks, incident snapshots and offline comparison to reduce that repeated work.
 
-## The two commands
+## The three commands
 
 | Command | Use it when | Result |
 | --- | --- | --- |
 | `preflight` | Before a deployment or while reviewing configuration | Findings with PASS, FAIL, UNKNOWN or WARN |
-| `incident` | When an application is unhealthy | A private JSON evidence folder |
+| `incident` | Before a release or when an application is unhealthy | A private JSON evidence folder |
+| `compare` | After collecting before/after snapshots | Changed images, replicas, restarts and warning events |
 
 Read [the toolkit guide](toolkit.md) for copy-paste commands.
 
@@ -46,3 +47,11 @@ The small Flask API is the deployment target. It returns its version and exposes
 The tools are read-only helpers. They do not fix incidents, guarantee scheduling or approve deployments. The default AWS setup is a single-node lab. Production use requires target-environment validation and configuration.
 
 Tests, builds, scanner engines and live deployment remain pending. Example outputs in the documentation are illustrations, not claimed results.
+
+## Try comparison without Kubernetes
+
+```bash
+python -m devops_toolkit compare examples/snapshots/before.json examples/snapshots/after.json
+```
+
+These are illustrative files, not real incident evidence. Read the output as observations to investigate, not an automatic root-cause diagnosis. See [the comparison guide](compare.md).

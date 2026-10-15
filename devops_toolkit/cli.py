@@ -11,6 +11,8 @@ import subprocess
 import sys
 import uuid
 
+from .compare import compare_files
+
 MAX_OUTPUT = 8 * 1024 * 1024
 
 
@@ -290,7 +292,7 @@ def incident(kube, args):
     for pod in pods:
         metadata, status, spec = pod.get("metadata", {}), pod.get("status", {}), pod.get("spec", {})
         report["pods"].append({
-            "name": metadata.get("name"), "phase": status.get("phase"),
+            "name": metadata.get("name"), "uid": metadata.get("uid"), "phase": status.get("phase"),
             "node": spec.get("nodeName"),
             "containers": [{"name": s.get("name"), "ready": s.get("ready"),
                             "restarts": s.get("restartCount", 0),
@@ -327,6 +329,7 @@ def incident(kube, args):
                     e.get("eventTime") or e.get("metadata", {}).get("creationTimestamp", ""))[-100:]
     for event in events:
         report["events"].append({
+            "uid": event.get("metadata", {}).get("uid"),
             "type": event.get("type"), "reason": event.get("reason"),
             "count": event.get("count"), "time": event.get("lastTimestamp") or event.get("eventTime"),
             "object": event.get("involvedObject", {}).get("name"),
@@ -359,7 +362,33 @@ def main(argv=None):
         else:
             command.add_argument("--include-logs", action="store_true")
             command.add_argument("--max-pods", type=int, choices=range(1, 51), default=10, metavar="1..50")
+    compare = subcommands.add_parser("compare", help="Compare two saved snapshots offline")
+    compare.add_argument("before", help="Earlier incident report.json")
+    compare.add_argument("after", help="Later incident report.json")
+    compare.add_argument("--output", help="New private JSON comparison file")
+    compare.add_argument("--fail-on-change", action="store_true")
     args = parser.parse_args(argv)
+    if args.command == "compare":
+        try:
+            report = compare_files(args.before, args.after)
+            if args.output:
+                write_private(Path(args.output), json.dumps(report, indent=2) + "\n")
+            for finding in report["findings"]:
+                resource = json.dumps(finding["resource"], ensure_ascii=True)[1:-1]
+                message = json.dumps(finding["message"], ensure_ascii=True)[1:-1]
+                values = ""
+                if finding["before"] is not None or finding["after"] is not None:
+                    values = " | " + json.dumps(finding["before"], ensure_ascii=True) + " -> " + json.dumps(finding["after"], ensure_ascii=True)
+                print("CHANGE " + resource + ": " + message + values)
+            if not report["findings"]:
+                print("No differences in the captured fields. This is not a health check.")
+            for warning in report["warnings"]:
+                print("NOTE: " + json.dumps(warning, ensure_ascii=True)[1:-1])
+            return 1 if args.fail_on_change and report["has_changes"] else 0
+        except (OSError, ValueError, KeyError, TypeError):
+            print("Cannot compare: use valid incident snapshots from the same context/namespace, "
+                  "in time order, and a new output file.", file=sys.stderr)
+            return 2
     if not args.context.strip() or args.context.startswith("-") or not re.fullmatch(r"[a-z0-9](?:[-a-z0-9]*[a-z0-9])?", args.namespace):
         parser.error("Use a context name and a valid namespace name")
     if args.command == "preflight" and not re.fullmatch(r"[a-z0-9](?:[-a-z0-9.]*[a-z0-9])?", args.deployment):
