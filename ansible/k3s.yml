@@ -1,0 +1,24 @@
+---
+- name: Configure a single-node Kubernetes lab
+  hosts: lab
+  become: true
+  vars:
+    k3s_version: v1.33.5+k3s1
+  tasks:
+    - name: Download versioned k3s installer
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/install-k3s.sh
+        mode: "0700"
+    - name: Install k3s without bundled ingress and load balancer
+      ansible.builtin.command: /tmp/install-k3s.sh
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        INSTALL_K3S_EXEC: "server --disable traefik --disable servicelb --write-kubeconfig-mode 600"
+      args:
+        creates: /usr/local/bin/k3s
+    - name: Ensure Kubernetes service is running
+      ansible.builtin.systemd:
+        name: k3s
+        state: started
+        enabled: true

@@ -1,0 +1,4 @@
+# Set this to a successful CI commit SHA through a reviewed pull request.
+image:
+  repository: ghcr.io/vishnu063/devops_platform
+  tag: ""

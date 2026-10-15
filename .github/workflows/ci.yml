@@ -1,0 +1,84 @@
+name: CI
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: |
+          coverage run --source=app -m unittest discover -s tests -v
+          coverage xml
+          coverage report --fail-under=80
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks full-history scan
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.24.3 git /repo --redact --exit-code 1
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep reviewed local rules
+        run: docker run --rm -v "$PWD:/src" semgrep/semgrep:1.140.0 semgrep scan --config /src/.semgrep.yml --error /src/app
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.17.3
+      - run: |
+          helm lint charts/platform --set image.tag=${{ github.sha }}
+          helm template platform charts/platform --set image.tag=${{ github.sha }} > rendered.yaml
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+      - run: |
+          terraform -chdir=infra fmt -check
+          terraform -chdir=infra init -backend=false
+          terraform -chdir=infra validate
+  image:
+    needs: [test, secrets, sast, manifests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build immutable commit-tagged image
+        run: docker build --build-arg APP_VERSION=${{ github.sha }} -t ghcr.io/vishnu063/devops_platform:${{ github.sha }} .
+      - name: Trivy image gate
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.67.2 image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed ghcr.io/vishnu063/devops_platform:${{ github.sha }}
+      - name: Generate SBOM
+        run: |
+          mkdir -p reports
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/reports:/reports" aquasec/trivy:0.67.2 image --format cyclonedx --output /reports/sbom.json ghcr.io/vishnu063/devops_platform:${{ github.sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: reports/sbom.json
+      - name: Publish on main only
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push ghcr.io/vishnu063/devops_platform:${{ github.sha }}

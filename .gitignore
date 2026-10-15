@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.tfstate*
+*.tfplan
+.terraform/
+*.tfvars
+!*.tfvars.example
+__pycache__/
+.coverage
+coverage.xml
+reports/
+.scannerwork/
+ansible/inventory.local

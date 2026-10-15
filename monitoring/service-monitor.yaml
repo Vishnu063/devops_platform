@@ -1,0 +1,35 @@
+# Requires Prometheus Operator CRDs (for example kube-prometheus-stack).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: platform
+  namespace: platform
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: platform
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform
+  namespace: platform
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: platform
+      rules:
+        - alert: PlatformTargetDown
+          expr: up{namespace="platform",service="platform"} == 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Platform metrics endpoint is unreachable

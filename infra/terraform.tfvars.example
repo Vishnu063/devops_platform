@@ -1,0 +1,4 @@
+region        = "ap-south-1"
+admin_cidr    = "203.0.113.10/32"
+public_key    = "REPLACE_WITH_YOUR_PUBLIC_SSH_KEY"
+instance_type = "t3.micro"

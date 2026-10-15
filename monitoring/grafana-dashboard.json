@@ -1,0 +1,46 @@
+{
+  "title": "DevOps Platform",
+  "uid": "devops-platform",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Scrape availability (1 = up)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{namespace=\"platform\",service=\"platform\"}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Container CPU cores",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"platform\",container=\"api\"}[5m]))"
+        }
+      ]
+    }
+  ]
+}
