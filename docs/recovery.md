@@ -2,7 +2,7 @@
 
 ## What this adds
 
-`diagnose` reads Kubernetes status and gives next actions. `recover` can automatically restore approved container image digests for one opted-in Deployment after Kubernetes reports `ProgressDeadlineExceeded`. It is a one-shot command that a trusted external scheduler can invoke; no controller or scheduled job is installed by this repository.
+`diagnose` reads Kubernetes status and gives next actions. `recover` can automatically restore approved container image digests for one opted-in Deployment after Kubernetes reports `ProgressDeadlineExceeded`. It is a one-shot command. `watch-recovery` adds a bounded monitoring loop that can trigger that recovery automatically after a persistent failed-rollout signal; no controller, service or scheduled job is installed by this repository.
 
 This is image-only recovery, not a full revision rollback. It cannot restore changed environment variables, init containers, volumes, configuration objects or database schemas. Only approve a replacement image compatible with the current configuration and data. No application-level health check or image-signature verification is performed by this command; approve trusted images from the release process.
 
@@ -60,7 +60,7 @@ python -m devops_toolkit recover --policy /secure/recovery-policy.json \
   --execute --audit /secure/reports/recovery-UNIQUE-RUN-ID.jsonl
 ```
 
-The audit parent must already exist. Use a unique filename each time; existing files are refused. `--execute` uses the policy as authorization without an interactive prompt. There is no built-in loop or background service. Scheduler setup, credentials and alert routing remain deployment responsibilities. Treat exit `1` or `2` as requiring an operator alert.
+The audit parent must already exist. Use a unique filename each time; existing files are refused. `--execute` uses the policy as authorization without an interactive prompt. The `recover` command does not loop. Use the built-in `watch-recovery` monitor described below to wait for a failed rollout; there is no installed background service. Scheduler setup, credentials and alert routing remain deployment responsibilities. Treat exit `1` or `2` as requiring an operator alert.
 
 ## Limits that prevent repeated or conflicting repairs
 
@@ -84,3 +84,34 @@ Diagnosis uses namespace-scoped list access for pods, deployments, events, PVCs,
 ## Validation status
 
 Implementation and mock test cases are included. Tests and live recovery drills have not been run, following the project owner's request to verify later. This feature is not production-validated. Before enabling a scheduler, validate on an isolated cluster: dry-run/no writes, mismatched identity, expired policy, GitOps refusal, simultaneous attempts, patch conflict, lost response, image-pull failure, successful recovery, failed recovery, audit failure and application-level health. Confirm a second invocation cannot repeat the mutation.
+
+## Automatically detect and recover one approved rollout
+
+Prepare the same policy and workload opt-in as above. Start the monitor while the approved pod template is deployed, before or after the rollout fails. The hash binds the policy to that exact template; it cannot be prepared against an unrelated older template.
+
+Preview mode waits and shows the repair it would make:
+
+```bash
+python -m devops_toolkit watch-recovery --policy /secure/recovery-policy.json
+```
+
+Enable automatic execution for the approved rollout:
+
+```bash
+python -m devops_toolkit watch-recovery --policy /secure/recovery-policy.json \
+  --execute --audit /secure/reports/recovery-UNIQUE-RUN-ID.jsonl
+```
+
+The audit directory must already exist and the filename must be new. The monitor runs in the foreground on the host where you start it; closing that process stops monitoring. It does not configure a system service, alerts or cluster credentials.
+
+- Polls every 15 seconds by default (`--interval 5..60`).
+- Requires three consecutive observations of an observed-generation `ProgressDeadlineExceeded` condition. A normal pod restart is not a trigger.
+- Exits without repair if all desired replicas are updated, ready and available. Kubernetes readiness remains a limited signal, not a business-health guarantee.
+- Waits up to 900 seconds by default (`--max-wait 30..3600`). The recovery verification window is additional, default 180 seconds (`--recovery-timeout 30..600`). API calls can add their bounded request timeouts.
+- Rechecks policy expiry, identity, exact template, opt-in, GitOps tracking and the persistent attempt latch on each poll. Policy edits stop the monitor; recovery also rechecks the approved policy hash before proceeding.
+- On the failure trigger, invokes the existing recovery command exactly once. Recovery re-reads the live target and performs its conditional patch. A conflict or an uncertain response stops the process; there is no repair retry loop.
+- Missing API access, changed target, an existing attempt latch or a changed/expired policy stops monitoring. Do not configure automatic process restarts to bypass these stops.
+
+Monitor exit codes: `0` ready without repair, eligible preview, or successful recovery verification; `1` monitoring/recovery timeout; `2` refusal, interruption or error. Console output distinguishes these outcomes. The private audit file is created only when repair is triggered; monitoring-only observations go to stdout. Preserve stdout and route nonzero exits to your own alert system before unattended use.
+
+A monitor is not enabled in this repository by default. Running the execute command requires a configured cluster, approved policy and workload opt-in. No cluster is connected here, and no monitor has been started. Mock test cases are supplied but have not been executed, following the request to verify later.

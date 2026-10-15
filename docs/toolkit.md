@@ -168,3 +168,7 @@ Use `python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platfo
 The new `recover` command previews an approved image repair by default. Only `--execute` with a valid policy and an opted-in Deployment can mutate the cluster. It is limited to a failed rollout, refuses recognized GitOps ownership, records a private audit and blocks repeat attempts. Existing preflight, incident and compare commands remain read-only.
 
 Read [recovery setup and limits](recovery.md) and [all Kubernetes problem types](kubernetes-problems.md). No live repair has been executed; tests and cluster validation remain pending.
+
+## Monitor an approved rollout automatically
+
+`watch-recovery` waits for a persistent failed-rollout condition and can trigger one approved image repair with `--execute`. It previews by default, stops after one attempt and uses the same policy, identity, GitOps and audit guards as `recover`. Read [setup, command and limits](recovery.md#automatically-detect-and-recover-one-approved-rollout). No monitor is currently running; tests and live validation remain pending.

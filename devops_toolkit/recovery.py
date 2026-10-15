@@ -47,7 +47,7 @@ def load_policy(path):
     return p
 
 
-def plan(deployment, namespace, p):
+def plan(deployment, namespace, p, *, require_failure=True):
     m, spec, status = deployment["metadata"], deployment["spec"], deployment.get("status", {})
     if namespace["metadata"]["uid"] != p["namespace_uid"] or m["uid"] != p["deployment_uid"]:
         raise ValueError("Resource identity changed")
@@ -61,9 +61,9 @@ def plan(deployment, namespace, p):
         raise ValueError("GitOps-managed workload: repair its source of truth")
     if m.get("deletionTimestamp") or spec.get("paused") or spec.get("replicas", 1) < 1:
         raise ValueError("Deleting, paused or scaled-to-zero Deployment")
-    if status.get("observedGeneration", 0) != m["generation"]:
+    if require_failure and status.get("observedGeneration", 0) != m["generation"]:
         raise ValueError("Controller has not observed this generation")
-    if not any(c.get("type") == "Progressing" and c.get("status") == "False" and
+    if require_failure and not any(c.get("type") == "Progressing" and c.get("status") == "False" and
                c.get("reason") == "ProgressDeadlineExceeded" for c in status.get("conditions", [])):
         raise ValueError("No observed failed rollout; automatic repair is not applicable")
     if fingerprint(spec["template"]) != p["failed_template_sha256"]:
@@ -103,7 +103,7 @@ def recovered(current, applied):
             status.get("unavailableReplicas", 0) == 0)
 
 
-def main(argv=None):
+def main(argv=None, *, expected_policy_sha256=None):
     from .cli import Kube, QueryError
     parser = argparse.ArgumentParser(prog="python -m devops_toolkit recover")
     parser.add_argument("--policy", required=True)
@@ -114,6 +114,8 @@ def main(argv=None):
     mutation_started = False
     try:
         p = load_policy(args.policy)
+        if expected_policy_sha256 is not None and fingerprint(p) != expected_policy_sha256:
+            raise ValueError("Policy changed before recovery")
         kube = Kube(p["context"], p["namespace"])
         deployment = kube.get("deployment", p["deployment"])
         namespace = kube.get("namespace", p["namespace"])

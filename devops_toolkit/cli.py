@@ -347,16 +347,19 @@ def incident(kube, args):
 
 def main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
-    if arguments and arguments[0] in {"diagnose", "recover"}:
+    if arguments and arguments[0] in {"diagnose", "recover", "watch-recovery"}:
         if arguments[0] == "diagnose":
             from .diagnose import main as command_main
-        else:
+        elif arguments[0] == "recover":
             from .recovery import main as command_main
+        else:
+            from .watch_recovery import main as command_main
         return command_main(arguments[1:])
     parser = argparse.ArgumentParser(prog="python -m devops_toolkit")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("diagnose", help="Read workload symptoms and recommended actions")
     subcommands.add_parser("recover", help="Preview or execute policy-bound image recovery")
+    subcommands.add_parser("watch-recovery", help="Monitor one rollout and automatically recover approved failure")
     for name in ("preflight", "incident"):
         command = subcommands.add_parser(name, help=(
             "Check deployment configuration" if name == "preflight"

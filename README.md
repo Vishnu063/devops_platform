@@ -6,7 +6,7 @@ A DevOps project that helps you **check deployments, diagnose Kubernetes problem
 
 ## Can it automatically fix Kubernetes problems?
 
-**It can attempt one specific repair when you explicitly enable it:** restore approved container image digests after a Deployment rollout fails. It checks the target identity and failed template, records an audit trail, attempts one change and checks readiness. No repair runs by default.
+**It can attempt one specific repair when you explicitly enable it:** restore approved container image digests after a Deployment rollout fails. It checks the target identity and failed template, records an audit trail, attempts one change and checks readiness. No repair runs by default. The new `watch-recovery` command can monitor one approved rollout and trigger recovery automatically when explicitly enabled.
 
 For crashes, image pulls, memory failures, pending pods, storage, scaling and node symptoms, `diagnose` gives evidence and next actions. Networking, certificates, permissions and other complex incidents have documented investigation paths. **It cannot safely fix every Kubernetes problem.**
 
@@ -16,7 +16,18 @@ python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform
 
 [Problem list and countermeasures](docs/kubernetes-problems.md) · [How to configure automatic image recovery](docs/recovery.md)
 
-The repository's Argo CD-managed application must be repaired through Git. Direct recovery refuses recognized GitOps-managed workloads. Use a separately approved lab Deployment to validate this feature first. Unattended invocation requires an external scheduler and a valid recovery policy; neither is enabled here.
+The repository's Argo CD-managed application must be repaired through Git. Direct recovery refuses recognized GitOps-managed workloads. Use a separately approved lab Deployment to validate this feature first. Unattended recovery is available through `watch-recovery` after you prepare a valid policy and enable execution. The monitor is not running or installed on any host or cluster.
+
+### Automatic recovery after setup
+
+Prepare the policy and workload opt-in using [the recovery guide](docs/recovery.md). Then start the monitor:
+
+```bash
+python -m devops_toolkit watch-recovery --policy /secure/recovery-policy.json \
+  --execute --audit /secure/reports/recovery-UNIQUE-RUN-ID.jsonl
+```
+
+It watches only the exact approved workload and pod template. After three consecutive failed-rollout observations, it attempts one image repair and checks Deployment readiness. It stops on success, a changed or expired policy, an error, or the monitoring timeout. It does not repair arbitrary pod, network, storage or cluster failures. Tests and live recovery drills remain pending.
 
 ## What changed before the failure?
 
@@ -43,6 +54,7 @@ python -m devops_toolkit compare before/report.json after/report.json
 | `compare` | After collecting two snapshots | A readable summary of observed changes |
 | `diagnose` | During an incident | Symptoms, partial-data warnings and next actions |
 | `recover` | After an approved failed image rollout | Preview by default; one guarded repair with `--execute` |
+| `watch-recovery` | While an approved rollout is in progress | Monitor and automatically trigger one approved image recovery |
 
 Comparison is offline and read-only. It requires only Python 3.12. Partial snapshots are flagged; a missing record is not automatically treated as a deleted resource.
 
