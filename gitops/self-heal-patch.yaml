@@ -1,0 +1,19 @@
+# Optional strategic merge patch for the Argo CD Application; not a standalone object.
+# Apply only after validating the desired Git revision and release digest.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-platform
+  namespace: argocd
+spec:
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: false
+      allowEmpty: false
+    retry:
+      limit: 2
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 1m

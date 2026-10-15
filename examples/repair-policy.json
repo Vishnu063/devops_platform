@@ -1,0 +1,19 @@
+{
+  "context": "YOUR_CONTEXT",
+  "namespace": "platform",
+  "namespace_uid": "REPLACE_WITH_LIVE_NAMESPACE_UID",
+  "kind": "Deployment",
+  "name": "platform",
+  "uid": "REPLACE_WITH_LIVE_DEPLOYMENT_UID",
+  "failed_spec_sha256": "REPLACE_WITH_64_CHARACTER_SHA256_OF_LIVE_SPEC",
+  "expires_at": "REPLACE_WITH_SHORT_FUTURE_UTC_EXPIRY",
+  "action": "containers",
+  "approved": {
+    "api": {
+      "resources": {
+        "requests": {"cpu": "100m", "memory": "128Mi"},
+        "limits": {"cpu": "500m", "memory": "256Mi"}
+      }
+    }
+  }
+}

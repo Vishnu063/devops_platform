@@ -6,9 +6,20 @@ A DevOps project that helps you **check deployments, diagnose Kubernetes problem
 
 ## Can it automatically fix Kubernetes problems?
 
-**It can attempt one specific repair when you explicitly enable it:** restore approved container image digests after a Deployment rollout fails. It checks the target identity and failed template, records an audit trail, attempts one change and checks readiness. No repair runs by default. The new `watch-recovery` command can monitor one approved rollout and trigger recovery automatically when explicitly enabled.
+**It can attempt approved repairs after setup:**
 
-For crashes, image pulls, memory failures, pending pods, storage, scaling and node symptoms, `diagnose` gives evidence and next actions. Networking, certificates, permissions and other complex incidents have documented investigation paths. **It cannot safely fix every Kubernetes problem.**
+| Problem | Available automatic action | Limit |
+| --- | --- | --- |
+| Bad image release | Restore approved image digests (`watch-recovery`) | Failed Deployment rollout only |
+| Broken container configuration | Restore approved image, resource, probe, security or environment-reference fields (`repair`) | Exact failed Deployment spec; operator supplies the known fix |
+| Incorrect Service selector | Restore the approved selector (`repair`) | Ordinary ClusterIP Service; verify ready EndpointSlices |
+| Replica count reduced accidentally | Restore an approved count (`repair`) | Increase from nonzero, maximum 10, refuses HPA ownership |
+| GitOps configuration drift | Optional Argo CD self-heal overlay | Reconciles Git; bad Git configuration still needs correction |
+| CI failures, node/storage faults, missing credentials, application bugs | Diagnosis, evidence and investigation guides | No generic automatic repair |
+
+Each direct repair requires explicit resource opt-in, an expiring policy tied to exact UIDs and spec, three observations, a conditional patch, a private audit and a persistent one-attempt latch. Policies contain approved fixes; the toolkit does not invent fixes. No monitor is running. **Implementation is not yet tested or production-validated.**
+
+Read [automatic repair setup and examples](docs/automatic-repair.md). Existing image recovery remains available as documented below. Networking beyond Service selectors, storage, node recovery and arbitrary security incidents remain outside automatic repair.
 
 ```bash
 python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform
@@ -54,6 +65,7 @@ python -m devops_toolkit compare before/report.json after/report.json
 | `compare` | After collecting two snapshots | A readable summary of observed changes |
 | `diagnose` | During an incident | Symptoms, partial-data warnings and next actions |
 | `recover` | After an approved failed image rollout | Preview by default; one guarded repair with `--execute` |
+| `repair` | An exact approved configuration failure or drift | Monitor and attempt one approved container, replica or Service-selector repair |
 | `watch-recovery` | While an approved rollout is in progress | Monitor and automatically trigger one approved image recovery |
 
 Comparison is offline and read-only. It requires only Python 3.12. Partial snapshots are flagged; a missing record is not automatically treated as a deleted resource.
@@ -130,7 +142,7 @@ The service is stateless and has no downstream dependency. Logs omit query strin
 
 | Path | Contents |
 | --- | --- |
-| devops_toolkit/ | Read-only deployment checks and incident evidence CLI |
+| devops_toolkit/ | Deployment checks, evidence, diagnosis and opt-in approved repairs |
 | app/, tests/ | API and regression tests |
 | ci/ | Shared checks used by GitHub Actions and Jenkins |
 | .github/workflows/ | Check, release and reusable quality jobs |
