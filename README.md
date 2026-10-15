@@ -68,8 +68,12 @@ Publish a successful CI commit image. Set `gitops/release.yaml` to that full SHA
 
 The first GHCR package may be private even though this repository is public. Make the package public before deploying, or configure an image pull secret locally.
 
+## Deployment safeguards
+
+The Helm chart supports verified image digests, validates full commit tags, includes a startup probe and soft host spreading, and applies restrictive API network policies. Read [readiness and remaining work](docs/readiness.md) before deployment. These changes are untested.
+
 ## Boundaries
 
 Single-node k3s is a cost-conscious lab, not a highly available production cluster. Two replicas on one node cannot survive node failure. No EKS control plane, NAT gateway, public ingress, database or cloud apply is enabled automatically. AWS EC2, storage and public IPv4 can incur charges; confirm your account eligibility before provisioning.
 
-Tool versions are explicit where practical. Base image tags and some upstream CI references remain mutable; digest/SHA pinning and signature verification are improvements to make after a successful baseline run. Scanners can fail as vulnerability databases change. Do not bypass findings to obtain a green badge.
+Tool versions are explicit where practical. Base image tags and some upstream CI references remain mutable; base-image/action SHA pinning and signature verification are improvements to make after a successful baseline run. Scanners can fail as vulnerability databases change. Do not bypass findings to obtain a green badge.

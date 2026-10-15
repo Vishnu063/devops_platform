@@ -19,7 +19,15 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
+      terminationGracePeriodSeconds: 30
       automountServiceAccountToken: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: {{ .Release.Name }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -28,7 +36,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: "{{ .Values.image.repository }}:{{ required "Set image.tag to a tested commit SHA" .Values.image.tag }}"
+          image: {{ include "platform.image" . | quote }}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -40,6 +48,12 @@ spec:
               drop: ["ALL"]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            failureThreshold: 15
+            periodSeconds: 2
           readinessProbe:
             httpGet:
               path: /health/ready

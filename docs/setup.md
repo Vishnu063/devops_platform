@@ -73,3 +73,7 @@ Keep state locally for a single operator. For teamwork migrate to an encrypted S
 Use a trusted Linux agent labeled docker with Docker and Git. Configure a multibranch pipeline pointing to Jenkinsfile. Jenkins needs credentials IDs sonar-token (secret text), snyk-token (secret text), ghcr (username/password with a packages-write token), and environment SONAR_HOST_URL.
 
 Use only trusted branches: Docker socket access grants host-level power, and untrusted PR code must not run alongside credentials. Jenkins does not include Terraform/Helm validation from GitHub CI; run those separately before release if choosing Jenkins alone.
+
+## Additional deployment safeguards
+
+See [readiness](readiness.md) for digest releases and network-policy selectors. The monitoring namespace/pod labels must match the real deployment; all other pod ingress and all API egress are denied by default. Public ingress remains disabled. The CNI must enforce these policies. No validation was performed during repository creation or hardening.

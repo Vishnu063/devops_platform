@@ -2,6 +2,8 @@ replicaCount: 2
 image:
   repository: ghcr.io/vishnu063/devops_platform
   tag: ""
+  # Digest takes precedence over tag. Use a registry-verified sha256 digest.
+  digest: ""
 resources:
   requests:
     cpu: 50m
@@ -9,3 +11,13 @@ resources:
   limits:
     cpu: 250m
     memory: 128Mi
+networkPolicy:
+  enabled: true
+  monitoringNamespace: monitoring
+  # Opt-in only after installing an ingress controller.
+  ingress:
+    enabled: false
+    namespace: ingress-nginx
+    podLabels:
+      app.kubernetes.io/name: ingress-nginx
+      app.kubernetes.io/component: controller
