@@ -1,1 +1,1 @@
-"""Read-only Kubernetes checks and incident evidence."""
+"""Kubernetes diagnostics, incident evidence and policy-bound image recovery."""

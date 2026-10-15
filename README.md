@@ -1,8 +1,22 @@
 # DevOps Platform
 
-A DevOps project that helps answer three questions: **Is this deployment configured correctly? What is happening now? What changed before the failure?** A small Flask API provides the delivery target, with security gates, signed images and GitOps deployment.
+A DevOps project that helps you **check deployments, diagnose Kubernetes problems, compare incident snapshots and recover approved failed image releases**. A small Flask API provides the delivery target, with security gates, signed images and GitOps deployment.
 
-**Status:** Repository review and hardening are complete for this revision. Unit tests, scanner execution, image builds and deployment validation remain pending. No AWS resources have been provisioned.
+**Status:** Recovery code and mock test cases are included, but tests, scanner execution, image builds and live deployment/recovery validation remain pending. No cluster repair or AWS provisioning has been performed. This is not a production-validated auto-healer.
+
+## Can it automatically fix Kubernetes problems?
+
+**It can attempt one specific repair when you explicitly enable it:** restore approved container image digests after a Deployment rollout fails. It checks the target identity and failed template, records an audit trail, attempts one change and checks readiness. No repair runs by default.
+
+For crashes, image pulls, memory failures, pending pods, storage, scaling and node symptoms, `diagnose` gives evidence and next actions. Networking, certificates, permissions and other complex incidents have documented investigation paths. **It cannot safely fix every Kubernetes problem.**
+
+```bash
+python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform
+```
+
+[Problem list and countermeasures](docs/kubernetes-problems.md) · [How to configure automatic image recovery](docs/recovery.md)
+
+The repository's Argo CD-managed application must be repaired through Git. Direct recovery refuses recognized GitOps-managed workloads. Use a separately approved lab Deployment to validate this feature first. Unattended invocation requires an external scheduler and a valid recovery policy; neither is enabled here.
 
 ## What changed before the failure?
 
@@ -27,6 +41,8 @@ python -m devops_toolkit compare before/report.json after/report.json
 | `preflight` | Before deployment | Configuration findings and estimated capacity |
 | `incident` | Before a release or during a problem | A private snapshot of the namespace |
 | `compare` | After collecting two snapshots | A readable summary of observed changes |
+| `diagnose` | During an incident | Symptoms, partial-data warnings and next actions |
+| `recover` | After an approved failed image rollout | Preview by default; one guarded repair with `--execute` |
 
 Comparison is offline and read-only. It requires only Python 3.12. Partial snapshots are flagged; a missing record is not automatically treated as a deleted resource.
 

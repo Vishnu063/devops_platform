@@ -1,0 +1,12 @@
+{
+  "context": "REPLACE_WITH_CONTEXT",
+  "namespace": "platform",
+  "namespace_uid": "REPLACE_WITH_NAMESPACE_UID",
+  "deployment": "replace-with-lab-deployment",
+  "deployment_uid": "REPLACE_WITH_DEPLOYMENT_UID",
+  "failed_template_sha256": "REPLACE_WITH_FAILED_TEMPLATE_SHA256",
+  "approved_images": {
+    "replace-with-container-name": "REPLACE_WITH_APPROVED_IMAGE_AT_SHA256_DIGEST"
+  },
+  "expires_at": "REPLACE_WITH_SHORT_LIVED_UTC_TIMESTAMP"
+}

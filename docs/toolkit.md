@@ -1,11 +1,13 @@
 # DevOps toolkit: start here
 
-This toolkit helps with three everyday jobs:
+This toolkit helps with five everyday jobs:
 1. Find obvious problems before a deployment.
 2. Collect a useful snapshot before a release or when an application is unhealthy.
 3. Compare snapshots to see what changed.
+4. Diagnose common workload symptoms and read suggested next actions.
+5. Recover an approved failed image rollout when explicitly enabled.
 
-It runs on your machine using Python. Preflight and collection use existing kubectl access; comparison reads local files only. It does not install anything in the cluster, deploy, delete, roll back, switch contexts or upload reports.
+It runs on your machine using Python. Preflight, incident collection and diagnosis use existing kubectl access; comparison reads local files only. These commands are read-only. Recovery can patch approved images only with an explicit policy and `--execute`. No command installs a controller, switches contexts or uploads reports.
 
 **Status:** implemented, with tests supplied for later execution. Live cluster behavior has not been verified.
 
@@ -158,3 +160,11 @@ python -m devops_toolkit compare before/report.json after/report.json
 Comparison needs no cluster or credentials. It highlights observed changes in images, replica counts, pod state, restarts and warning events. Use `--output reports/comparison.json` for a new private JSON file, or `--fail-on-change` to return exit code 1 when differences are found. Invalid or incompatible snapshots return 2. Normal successful comparison returns 0, even when differences exist.
 
 See [the comparison guide](compare.md) for the full before/after workflow and limitations.
+
+## Diagnose symptoms and recover approved images
+
+Use `python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform` to collect workload symptoms and suggested next actions. This command is read-only.
+
+The new `recover` command previews an approved image repair by default. Only `--execute` with a valid policy and an opted-in Deployment can mutate the cluster. It is limited to a failed rollout, refuses recognized GitOps ownership, records a private audit and blocks repeat attempts. Existing preflight, incident and compare commands remain read-only.
+
+Read [recovery setup and limits](recovery.md) and [all Kubernetes problem types](kubernetes-problems.md). No live repair has been executed; tests and cluster validation remain pending.

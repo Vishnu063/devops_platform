@@ -6,13 +6,15 @@ A deployment can fail because an image is wrong, a required Secret is missing, p
 
 This project combines a delivery pipeline with deployment checks, incident snapshots and offline comparison to reduce that repeated work.
 
-## The three commands
+## The commands
 
 | Command | Use it when | Result |
 | --- | --- | --- |
 | `preflight` | Before a deployment or while reviewing configuration | Findings with PASS, FAIL, UNKNOWN or WARN |
 | `incident` | Before a release or when an application is unhealthy | A private JSON evidence folder |
 | `compare` | After collecting before/after snapshots | Changed images, replicas, restarts and warning events |
+| `diagnose` | During an incident | Workload symptoms and suggested next actions |
+| `recover` | An approved image release has failed | Preview, or one guarded image repair when explicitly enabled |
 
 Read [the toolkit guide](toolkit.md) for copy-paste commands.
 
@@ -44,7 +46,7 @@ The small Flask API is the deployment target. It returns its version and exposes
 
 ## Current limits
 
-The tools are read-only helpers. They do not fix incidents, guarantee scheduling or approve deployments. The default AWS setup is a single-node lab. Production use requires target-environment validation and configuration.
+Preflight, incident, compare and diagnose are read-only helpers. Recovery can change approved images only when explicitly enabled; it does not guarantee incident resolution. No command guarantees scheduling or approves a release. The default AWS setup is a single-node lab. Production use requires target-environment validation and configuration.
 
 Tests, builds, scanner engines and live deployment remain pending. Example outputs in the documentation are illustrations, not claimed results.
 
@@ -55,3 +57,11 @@ python -m devops_toolkit compare examples/snapshots/before.json examples/snapsho
 ```
 
 These are illustrative files, not real incident evidence. Read the output as observations to investigate, not an automatic root-cause diagnosis. See [the comparison guide](compare.md).
+
+## Diagnose symptoms and recover approved images
+
+Use `python -m devops_toolkit diagnose --context YOUR_CONTEXT --namespace platform` to collect workload symptoms and suggested next actions. This command is read-only.
+
+The new `recover` command previews an approved image repair by default. Only `--execute` with a valid policy and an opted-in Deployment can mutate the cluster. It is limited to a failed rollout, refuses recognized GitOps ownership, records a private audit and blocks repeat attempts. Existing preflight, incident and compare commands remain read-only.
+
+Read [recovery setup and limits](recovery.md) and [all Kubernetes problem types](kubernetes-problems.md). No live repair has been executed; tests and cluster validation remain pending.

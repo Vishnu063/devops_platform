@@ -1,4 +1,4 @@
-"""Read-only Kubernetes diagnostics. Requires Python 3.12 and kubectl."""
+"""Kubernetes diagnostics and explicitly enabled recovery. Python 3.12 and kubectl."""
 import argparse
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -346,8 +346,17 @@ def incident(kube, args):
 
 
 def main(argv=None):
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments and arguments[0] in {"diagnose", "recover"}:
+        if arguments[0] == "diagnose":
+            from .diagnose import main as command_main
+        else:
+            from .recovery import main as command_main
+        return command_main(arguments[1:])
     parser = argparse.ArgumentParser(prog="python -m devops_toolkit")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    subcommands.add_parser("diagnose", help="Read workload symptoms and recommended actions")
+    subcommands.add_parser("recover", help="Preview or execute policy-bound image recovery")
     for name in ("preflight", "incident"):
         command = subcommands.add_parser(name, help=(
             "Check deployment configuration" if name == "preflight"
