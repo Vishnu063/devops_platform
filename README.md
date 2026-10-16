@@ -1,5 +1,7 @@
 # DevOps Platform Toolkit
 
+[Reviewer walkthrough](INTERVIEW.md) · [Portfolio](https://github.com/Vishnu063/Vishnu063/blob/main/PORTFOLIO.md)
+
 **Check a Kubernetes release, understand an incident, and recover an explicitly approved failure.**
 
 Use this when you are about to deploy and want one readable answer to: **what is missing, what could reduce availability, and what recovery is actually approved?** During an incident, collect evidence and build a timeline rather than repeating the same investigation commands.
