@@ -1,5 +1,10 @@
 name: Local recovery demo
 on:
+  push:
+    branches: [main]
+    paths:
+      - devops_toolkit/demo.py
+      - .github/workflows/recovery-demo.yml
   workflow_dispatch:
     inputs:
       scenario:
@@ -20,6 +25,10 @@ jobs:
   demo:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.scenario) || '["images","selector","replicas","configuration"]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -50,7 +59,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_watch_recovery.py' -v
       - name: Demonstrate approved automatic recovery
         env:
-          DEMO_SCENARIO: ${{ inputs.scenario }}
+          DEMO_SCENARIO: ${{ matrix.scenario }}
         run: python3 -m devops_toolkit demo --scenario "$DEMO_SCENARIO" --output reports/recovery-demo
       - name: Show observed result
         if: always()
@@ -63,7 +72,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: local-recovery-evidence
+          name: local-recovery-evidence-${{ matrix.scenario }}
           path: |
             reports/recovery-demo/summary.md
             reports/recovery-demo/results.json

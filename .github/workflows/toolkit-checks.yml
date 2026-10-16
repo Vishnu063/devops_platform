@@ -40,6 +40,8 @@ jobs:
         run: |
           python3 -m venv .venv-toolkit
           .venv-toolkit/bin/python -m pip install '.[yaml]'
+      - name: Verify installed console commands outside the checkout
+        run: .venv-toolkit/bin/python ci/smoke-installed-toolkit.py "$PWD/.venv-toolkit/bin/devops-toolkit"
       - name: Check toolkit and rendered configuration without a cluster
         env:
           TOOLKIT_PYTHON: .venv-toolkit/bin/python
