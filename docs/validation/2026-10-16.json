@@ -1,0 +1,266 @@
+{
+  "validated_on": "2026-10-16",
+  "source_commit": "a217ad5897dec2c5bc942bf3fda9cb2df97c3d8d",
+  "local_python": "3.12.14",
+  "local_regression_tests": {
+    "run": 97,
+    "failures": 0,
+    "errors": 0
+  },
+  "toolkit_ci": {
+    "run_id": 38853058232,
+    "conclusion": "success",
+    "toolkit_tests": 90
+  },
+  "live_recovery": {
+    "run_id": 38853058233,
+    "conclusion": "success",
+    "scenarios": [
+      {
+        "result": "PASS",
+        "scenario": "images",
+        "cluster_retained": false,
+        "stages": [
+          {
+            "stage": "prerequisites",
+            "status": "PASS"
+          },
+          {
+            "stage": "create separate local cluster",
+            "status": "PASS"
+          },
+          {
+            "stage": "deploy healthy application",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response before failure",
+            "status": "PASS"
+          },
+          {
+            "stage": "introduce demo images fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "observe demo fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "automatic approved images recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response after recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "repeat recovery refused",
+            "status": "PASS"
+          },
+          {
+            "stage": "capture and correlate recovery evidence",
+            "status": "PASS"
+          },
+          {
+            "stage": "remove demo cluster",
+            "status": "PASS"
+          }
+        ],
+        "python_version": "3.12.3",
+        "kind_version": "kind v0.33.0 go1.24.13 linux/amd64",
+        "kubectl_version": "v1.37.0",
+        "kubernetes_version": "v1.37.0",
+        "node_image": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+        "approved_image": "docker.io/library/python@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258",
+        "artifact_id": 12026106952
+      },
+      {
+        "result": "PASS",
+        "scenario": "selector",
+        "cluster_retained": false,
+        "stages": [
+          {
+            "stage": "prerequisites",
+            "status": "PASS"
+          },
+          {
+            "stage": "create separate local cluster",
+            "status": "PASS"
+          },
+          {
+            "stage": "deploy healthy application",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response before failure",
+            "status": "PASS"
+          },
+          {
+            "stage": "introduce demo selector fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "observe demo fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "automatic approved selector recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response after recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "repeat recovery refused",
+            "status": "PASS"
+          },
+          {
+            "stage": "capture and correlate recovery evidence",
+            "status": "PASS"
+          },
+          {
+            "stage": "remove demo cluster",
+            "status": "PASS"
+          }
+        ],
+        "python_version": "3.12.3",
+        "kind_version": "kind v0.33.0 go1.24.13 linux/amd64",
+        "kubectl_version": "v1.37.0",
+        "kubernetes_version": "v1.37.0",
+        "node_image": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+        "approved_image": "docker.io/library/python@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258",
+        "artifact_id": 12026013396
+      },
+      {
+        "result": "PASS",
+        "scenario": "configuration",
+        "cluster_retained": false,
+        "stages": [
+          {
+            "stage": "prerequisites",
+            "status": "PASS"
+          },
+          {
+            "stage": "create separate local cluster",
+            "status": "PASS"
+          },
+          {
+            "stage": "deploy healthy application",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response before failure",
+            "status": "PASS"
+          },
+          {
+            "stage": "introduce demo configuration fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "observe demo fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "automatic approved containers recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response after recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "repeat recovery refused",
+            "status": "PASS"
+          },
+          {
+            "stage": "capture and correlate recovery evidence",
+            "status": "PASS"
+          },
+          {
+            "stage": "remove demo cluster",
+            "status": "PASS"
+          }
+        ],
+        "python_version": "3.12.3",
+        "kind_version": "kind v0.33.0 go1.24.13 linux/amd64",
+        "kubectl_version": "v1.37.0",
+        "kubernetes_version": "v1.37.0",
+        "node_image": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+        "approved_image": "docker.io/library/python@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258",
+        "artifact_id": 12025563683
+      },
+      {
+        "result": "PASS",
+        "scenario": "replicas",
+        "cluster_retained": false,
+        "stages": [
+          {
+            "stage": "prerequisites",
+            "status": "PASS"
+          },
+          {
+            "stage": "create separate local cluster",
+            "status": "PASS"
+          },
+          {
+            "stage": "deploy healthy application",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response before failure",
+            "status": "PASS"
+          },
+          {
+            "stage": "introduce demo replicas fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "observe demo fault",
+            "status": "PASS"
+          },
+          {
+            "stage": "automatic approved replicas recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "HTTP response after recovery",
+            "status": "PASS"
+          },
+          {
+            "stage": "repeat recovery refused",
+            "status": "PASS"
+          },
+          {
+            "stage": "capture and correlate recovery evidence",
+            "status": "PASS"
+          },
+          {
+            "stage": "remove demo cluster",
+            "status": "PASS"
+          }
+        ],
+        "python_version": "3.12.3",
+        "kind_version": "kind v0.33.0 go1.24.13 linux/amd64",
+        "kubectl_version": "v1.37.0",
+        "kubernetes_version": "v1.37.0",
+        "node_image": "kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5",
+        "approved_image": "docker.io/library/python@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258",
+        "artifact_id": 12025373848
+      }
+    ]
+  },
+  "initial_attempt": {
+    "source_commit": "363a50fdd883585e7acd1b98b0613169cae07c7f",
+    "run_id": 38852783905,
+    "images": "PASS",
+    "configuration": "PASS",
+    "replicas": "PASS",
+    "selector": "FAIL at observe demo fault; no repair attempted; cluster cleaned up"
+  },
+  "limits": [
+    "One disposable kind/Kubernetes environment, not production certification.",
+    "No production deployment, real notification delivery or independent user feedback.",
+    "Offline video uses a fabricated example and does not show live repair."
+  ]
+}

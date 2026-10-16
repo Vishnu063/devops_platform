@@ -83,7 +83,7 @@ Diagnosis uses namespace-scoped list access for pods, deployments, events, PVCs,
 
 ## Validation status
 
-Implementation and mock test cases are included. Tests and live recovery drills have not been run, following the project owner's request to verify later. This feature is not production-validated. Before enabling a scheduler, validate on an isolated cluster: dry-run/no writes, mismatched identity, expired policy, GitOps refusal, simultaneous attempts, patch conflict, lost response, image-pull failure, successful recovery, failed recovery, audit failure and application-level health. Confirm a second invocation cannot repeat the mutation.
+Implementation and mock test cases are included. Regression tests and disposable live drills now have [execution evidence](compatibility.md). This feature is not production-validated. Before enabling a scheduler, validate on an isolated cluster: dry-run/no writes, mismatched identity, expired policy, GitOps refusal, simultaneous attempts, patch conflict, lost response, image-pull failure, successful recovery, failed recovery, audit failure and application-level health. Confirm a second invocation cannot repeat the mutation.
 
 ## Automatically detect and recover one approved rollout
 
@@ -114,8 +114,8 @@ The audit directory must already exist and the filename must be new. The monitor
 
 Monitor exit codes: `0` ready without repair, eligible preview, or successful recovery verification; `1` monitoring/recovery timeout; `2` refusal, interruption or error. Console output distinguishes these outcomes. The private audit file is created only when repair is triggered; monitoring-only observations go to stdout. Preserve stdout and route nonzero exits to your own alert system before unattended use.
 
-A monitor is not enabled in this repository by default. Running the execute command requires a configured cluster, approved policy and workload opt-in. No cluster is connected here, and no monitor has been started. Mock test cases are supplied but have not been executed, following the request to verify later.
+A monitor is not enabled in this repository by default. Running the execute command requires a configured cluster, approved policy and workload opt-in. No production cluster is connected or monitored by default. Mock tests and isolated GitHub-runner drills now have [execution evidence](compatibility.md).
 
 ## Easier setup and operation
 
-Use [the policy generator](policies.md) instead of manually copying UIDs/hashes. [Release-check](release-check.md) explains pre-deployment evidence, [timeline](timeline.md) correlates snapshots/audits and [alerts](alerts.md) provides optional completion notifications. Direct repairs now honor [namespace pause and process stop controls](operations.md); these are checked before planning and immediately before mutation but cannot atomically cancel an API request already in flight. All new behavior remains unexecuted.
+Use [the policy generator](policies.md) instead of manually copying UIDs/hashes. [Release-check](release-check.md) explains pre-deployment evidence, [timeline](timeline.md) correlates snapshots/audits and [alerts](alerts.md) provides optional completion notifications. Direct repairs now honor [namespace pause and process stop controls](operations.md); these are checked before planning and immediately before mutation but cannot atomically cancel an API request already in flight. See [compatibility](compatibility.md) for current execution evidence.

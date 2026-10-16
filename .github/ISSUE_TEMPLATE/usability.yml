@@ -1,0 +1,51 @@
+name: Usability feedback
+description: Tell us where installation, diagnosis or reports were confusing.
+title: '[Usability] '
+body:
+  - type: markdown
+    attributes:
+      value: 'Use synthetic examples where possible. Do not paste credentials, kubeconfigs, private logs, internal identifiers or live report attachments.'
+  - type: input
+    id: version
+    attributes:
+      label: Toolkit version and commit
+      description: Include OS and Python version; omit private machine names.
+    validations:
+      required: true
+  - type: dropdown
+    id: task
+    attributes:
+      label: Which task did you try?
+      options:
+        - Install and doctor
+        - Offline example and report
+        - Guide or suggestions
+        - Live read-only diagnosis
+        - Approved disposable recovery demo
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: stuck
+    attributes:
+      label: Where did you get stuck?
+      description: Describe the step and a sanitized error; do not attach live cluster reports.
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: What would make this easier?
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I reviewed this feedback for credentials and private information.
+          required: true

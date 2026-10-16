@@ -54,4 +54,4 @@ A running/hung command cannot print a completion hint until it returns. Open ano
 - Use new output files under an existing private directory. Outputs contain curated playbook text and topic names; source report values are not copied. Review original evidence privately.
 - Exit 0 means suggestions were produced, not that anything was fixed. Exit 2 means input/output processing was incomplete.
 
-The supplied regression cases and runtime behavior remain unexecuted for this revision. No repair, cluster check or notification was run while adding this feature.
+Suggestion regression cases and installed CLI processing of a synthetic report have passed. See [compatibility](compatibility.md) for exact scope. Suggestions themselves do not execute repairs, cluster checks or notifications.

@@ -20,7 +20,7 @@ The rendering values use an explicitly fake digest under `example.invalid`. This
 
 The repository job uses `--warnings-as-errors`: definite configuration errors, configuration warnings and test/tool failures fail the check. The standalone CLI can omit that flag when a team wants to review warnings without failing its offline gate. Passing this job is not a production release approval. Add the check to branch protection yourself after verifying it; workflow code alone cannot require reviewers or checks in repository settings.
 
-**Execution status:** this update's commit is marked `[skip ci]` so publishing the code does not run the newly automatic checks. The workflow is configured for future matching events; no green run is claimed. Required checks on a skipped commit may remain pending. Do not treat a skip as passing validation.
+**Execution status:** automatic offline CI has now run successfully, including source installation and installed-console smoke checks. See [the evidence table](compatibility.md) for commit-specific runs. Earlier code-only additions deliberately used `[skip ci]`; skipped commits are not passing evidence.
 
 ## Reuse the commands in another pipeline
 
@@ -45,7 +45,7 @@ For this repository, `ci/offline-checks.sh` provides the shared test/render/chec
 
 ## Jenkins integration
 
-The existing `Jenkinsfile` remains trusted-main-only. A new Toolkit configuration checks stage prepares a virtual environment and calls the same offline script. Other source, image and external gates remain in place. A `[skip ci]` marker skips those check/build stages after checkout, including for this code-only update. An externally configured Jenkins SCM trigger can still start checkout/cleanup; this repository cannot disable an administrator-owned job trigger. Jenkins job/SCM trust rules still need administrator configuration; a repository script cannot protect credentials from an attacker who controls its Jenkinsfile.
+The existing `Jenkinsfile` remains trusted-main-only. A new Toolkit configuration checks stage prepares a virtual environment and calls the same offline script. Other source, image and external gates remain in place. A `[skip ci]` marker skips those check/build stages after checkout, when that marker is deliberately used. An externally configured Jenkins SCM trigger can still start checkout/cleanup; this repository cannot disable an administrator-owned job trigger. Jenkins job/SCM trust rules still need administrator configuration; a repository script cannot protect credentials from an attacker who controls its Jenkinsfile.
 
 An optional **RUN_LIVE_RELEASE_CHECK** parameter defaults to false. Enabling it requires an administrator to configure the `toolkit-kubeconfig` file credential and the following trusted job variables:
 

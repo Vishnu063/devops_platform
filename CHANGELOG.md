@@ -1,5 +1,13 @@
 # Changelog
 
+## Verification and adoption evidence (2026-10-16)
+
+- Built and installed the source wheel in a fresh virtual environment; exercised installed commands outside the checkout.
+- Executed application/toolkit regressions and automatic GitHub offline CI; recorded exact evidence in docs/compatibility.md.
+- Ran four disposable recovery scenarios; preserved the initial selector failure and corrected null EndpointSlice handling with a regression case.
+- Added a real offline command-output video/transcript, walkthrough and usability feedback tasks/template.
+- No production deployment, real webhook delivery, publication or independent user endorsement is claimed.
+
 ## Troubleshooting suggestions (unreleased, unverified)
 
 - Offline `suggest` helper for symptoms or existing toolkit reports: possible causes, resolution guidance and verification.

@@ -149,7 +149,7 @@ Commands use argument arrays without a shell. Kubernetes writes are not implemen
 3. Collect a snapshot during a lab rollout and compare desired versus ready replicas.
 4. Explain why missing permissions produce UNKNOWN and why a capacity estimate is not a scheduling guarantee.
 
-Regression tests are in `tests/test_toolkit.py`. They use fake cluster data and mocked processes. The existing test discovery command includes them; they have not been run during implementation. The current coverage threshold measures the API package, not toolkit coverage.
+Regression tests are in `tests/test_toolkit.py`. They use fake cluster data and mocked processes. The existing test discovery command includes them; they now have recorded results in [compatibility](compatibility.md). The current coverage threshold measures the API package, not toolkit coverage.
 
 ## 3. Compare snapshots
 
@@ -189,4 +189,4 @@ Start with [release-check](release-check.md) for the six deployment questions. U
 
 Use [the short walkthrough](easy-start.md) for `doctor`, `guide` and fabricated offline `example` scenarios. [Reports](reports.md) covers standalone HTML, Markdown, summary JSON and incident handover drafts. `diagnose`, `release-check` and `manifest-check` accept `--format text`; their original JSON output remains the default.
 
-[GitOps proposals](gitops-proposals.md) creates a local image-only source patch/review bundle. No PR, commit or reconciliation is performed; existing direct-repair ownership guards remain in force. All new behavior and regression cases remain unexecuted.
+[GitOps proposals](gitops-proposals.md) creates a local image-only source patch/review bundle. No PR, commit or reconciliation is performed; existing direct-repair ownership guards remain in force. See [compatibility](compatibility.md) for tested behavior and remaining limits.

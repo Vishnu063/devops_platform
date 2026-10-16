@@ -37,8 +37,8 @@ Follow [README](../README.md) to install the console CLI from source, or use `py
 | Design and production gaps | [Decisions](decisions.md), [readiness](readiness.md) |
 | Contribute or report a bug | [Contributing](../CONTRIBUTING.md), [security](../SECURITY.md) |
 
-All new installation, tests, demos, alert delivery and live recovery remain unrun. Code presence is not production validation. No automation is installed or enabled by reading these guides or generating a policy.
+Source installation, offline commands, regression tests and disposable recovery scenarios now have [execution evidence](compatibility.md). Real alert delivery and production validation remain pending. Code presence is not production validation. No automation is installed or enabled by reading these guides or generating a policy.
 
 ## In an existing delivery pipeline
 
-Use [manifest input](manifest-input.md) for existing YAML/JSON or a local chart. The new [automatic CI job](ci-integration.md) adds offline reports to PR Checks without credentials. Trusted connected checks remain opt-in. For investigation, use [drift](drift.md), [server-side repair validation](dry-run.md) and [workload bundles](bundle.md). This update deliberately skips CI execution; future matching events can run the configured automatic job.
+Use [manifest input](manifest-input.md) for existing YAML/JSON or a local chart. The new [automatic CI job](ci-integration.md) adds offline reports to PR Checks without credentials. Trusted connected checks remain opt-in. For investigation, use [drift](drift.md), [server-side repair validation](dry-run.md) and [workload bundles](bundle.md). Automatic CI has run successfully; see [compatibility](compatibility.md) for commit-specific results.

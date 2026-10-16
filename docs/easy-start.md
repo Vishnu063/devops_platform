@@ -1,7 +1,7 @@
 # Your first useful result
 
 Start offline. You do not need AWS, a cluster or Docker for this walkthrough.
-These are commands for you to run later; this revision has not been executed or usability-tested.
+The installed offline workflow has been exercised and recorded in [the walkthrough](walkthrough.md). Check [compatibility](compatibility.md) for exact results; independent usability feedback is still pending.
 
 ## 1. Install from this repository
 

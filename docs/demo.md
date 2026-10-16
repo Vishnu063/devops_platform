@@ -2,7 +2,7 @@
 
 The demo includes four isolated scenarios: bad image, incorrect Service selector, reduced replicas and broken readiness configuration. Each supplies a known approved correction and attempts it once. When run, it produces a readable report from live observations. It is not a general-purpose Kubernetes auto-healer.
 
-**Current evidence:** the demo implementation and offline regression cases are supplied. The live demo and tests have not been executed in this workspace. Docker, kind and kubectl are unavailable here. No successful-run result is claimed.
+**Current evidence:** regression tests passed locally, and disposable live scenarios have run on isolated GitHub runners. See [compatibility](compatibility.md) for the initial outcomes, selector correction and rerun. Local Docker/kind/kubectl are unavailable in the editing workspace; no production cluster is used.
 
 ## Fastest way: run it on GitHub
 
@@ -10,7 +10,7 @@ The demo includes four isolated scenarios: bad image, incorrect Service selector
 2. Choose the branch and scenario you want to verify and run the workflow.
 3. Open its summary and download **local-recovery-evidence**.
 
-The workflow is manual only. It creates a kind cluster on an Ubuntu GitHub runner, runs focused offline checks and then attempts the real demo. It uses no AWS account, production kubeconfig or repository secret. It does not deploy the platform application. A green result applies only to the commit and isolated scenario that ran. The workflow itself has not been run yet.
+The workflow supports manual selection and a four-scenario matrix on main-branch changes to `devops_toolkit/demo.py` or its workflow file. It creates a kind cluster on an Ubuntu GitHub runner, runs focused offline checks and then attempts the real demo. It uses no AWS account, production kubeconfig or repository secret. It does not deploy the platform application. A green result applies only to the commit and isolated scenario that ran. Use [the run evidence](compatibility.md) rather than assuming every scenario passed.
 
 ## Run on your laptop
 
@@ -113,4 +113,4 @@ The manual workflow also runs offline cases for preview/no mutation, changed pol
 
 `--scenario all` may take substantially longer and uses a new parent evidence folder. No attempt latch is cleared to reuse a workload. The configuration case deliberately breaks the probe while the server remains healthy; it does not claim that loosening probes repairs application failures. The selector case checks EndpointSlice readiness and the expected HTTP response; other network paths remain outside this drill.
 
-Successful scenario completion also writes `timeline.md`. Service selectors are checked directly by the demo; standard namespace snapshots do not include Service objects, so a selector diff is not fabricated in the snapshot comparison. Repair audit events identify that action in the timeline. All four scenarios and the updated workflow remain unrun.
+Successful scenario completion also writes `timeline.md`. Service selectors are checked directly by the demo; standard namespace snapshots do not include Service objects, so a selector diff is not fabricated in the snapshot comparison. Repair audit events identify that action in the timeline. Observed scenario outcomes, including failures and reruns, are recorded in [compatibility](compatibility.md).

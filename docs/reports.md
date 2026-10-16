@@ -23,4 +23,4 @@ Handover drafts deliberately leave owner, user impact and next-update time for a
 
 The [automatic offline CI workflow](ci-integration.md) continues to publish only its fixed offline configuration report and summary. It is supplied with the new usability regression cases for future runs. No live evidence is automatically uploaded. You may use summary Markdown/JSON in your own trusted Jenkins or GitHub workflow after reviewing its contents and permissions. No new webhook, bot comment, external ticket or upload is enabled by an export.
 
-Tests and runtime rendering have not been executed for this revision. Syntax inspection is not a usability or security test.
+Regression tests and installed offline HTML/Markdown generation have passed. See [compatibility](compatibility.md) for scope and [the recording](walkthrough.md) for actual CLI output. These are not independent usability or security assessments.

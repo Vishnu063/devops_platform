@@ -1,20 +1,30 @@
-# Compatibility and validation status
+# Compatibility and observed validation
 
-| Component | Intended interface | Execution evidence for this revision |
+The toolkit is development version `0.3.0.dev0`. A passing test or disposable demo is evidence for that environment and commit, not production certification.
+
+## Verified on 2026-10-16
+
+| Component | Observed environment | Result and boundary |
 | --- | --- | --- |
-| Toolkit Python runtime | Python 3.12+ standard library for base JSON mode; optional PyYAML 6.0.3 for YAML | Syntax parsed only; installation and CLI behavior unexecuted |
-| Console installation | Local `pip install .` using pinned setuptools build backend | Build/install not run; not published to PyPI |
-| Kubernetes reads/patches | apps/v1 Deployment, core/v1 Service/Namespace, autoscaling HPA, discovery.k8s.io EndpointSlice | No live compatibility matrix verified |
-| Local demos | Linux amd64 / amd64 Docker Desktop, kind v0.33.0, pinned Kubernetes v1.37.0 node and Python image | Four scenario implementations supplied; no demos run |
-| Slack / Teams / generic webhooks | HTTPS JSON POST; text / Adaptive Card / fixed outcome record | No real receiver or delivery tested |
-| Offline timeline | Incident schema 1 and scoped JSONL repair audits | Syntax parsed; regression cases supplied, not run |
-| AWS / EKS / AKS / GKE | No provider-specific repair implementation | Not verified or certified |
-| Argo CD self-heal overlay | Existing optional overlay; direct repair refuses recognized tracking | Not applied or validated |
+| Local runtime | CPython 3.12.14, Linux amd64 | 97 application/toolkit tests passed after the EndpointSlice fix (96 passed before it) |
+| Source build/install | Fresh virtual environment, pinned setuptools backend, PyYAML 6.0.3 | Wheel built and installed; console smoke passed from outside the source checkout |
+| Installed CLI | version, doctor, noninteractive guide boundary, example, suggest, HTML report, handover | Actual successful offline commands; synthetic incident, no live cluster |
+| Automatic CI | GitHub Ubuntu 24.04 runner, source commit `363a50fdd883585e7acd1b98b0613169cae07c7f` | [Toolkit checks passed](https://github.com/Vishnu063/devops_platform/actions/runs/38852783998): installation, console smoke, 89 toolkit tests and isolated Helm/configuration gate |
+| Helm configuration gate | CI tool image `alpine/helm@sha256:d899e6316789fec04ee95300a18e454b7942539cbb3d89bde3e0655d6ca2e895` | Offline rendering/check gate passed; Helm semantic version was not logged, so no version range is claimed |
+| Local Kubernetes demo environment | Python 3.12.3; kind v0.33.0 built with Go 1.24.13; kubectl and server v1.37.0; Linux amd64 | Exact versions read from the successful replica demo's `results.json`; one environment, not a broader support matrix |
+| First live scenario matrix | Same source commit as above | [Images, replicas and configuration passed; selector failed](https://github.com/Vishnu063/devops_platform/actions/runs/38852783905). Clusters were cleaned up. Selector failure occurred while observing the injected fault, before repair |
+| EndpointSlice correction | Commit `a217ad5897dec2c5bc942bf3fda9cb2df97c3d8d` | Null endpoint lists now mean no ready endpoints. All 97 local tests, [fresh CI](https://github.com/Vishnu063/devops_platform/actions/runs/38853058232) and [all four live scenarios](https://github.com/Vishnu063/devops_platform/actions/runs/38853058233) passed. Each scenario verified HTTP recovery, one acknowledged repair, repeat-attempt refusal and cluster cleanup |
 
-A Kubernetes version in an API example or demo pin is not a supported-version claim. kubectl/server version skew, admission policies, distribution behavior and authentication plugins need environment validation. The capacity estimate intentionally reports UNKNOWN for some newer resource patterns instead of pretending to simulate scheduling.
+The demo node image is `kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5`. Exact application-image digest, versions, scenario stages and cleanup state are retained in each run's evidence artifact. GitHub artifacts expire after seven days; job logs/run links remain the primary navigation. Do not infer success from an expired or absent artifact.
 
-The source version is `0.3.0.dev0`. No release tag or published artifact is created by this change. When a real run is performed later, record commit SHA, exact tool versions, environment and observed result; update this table from that evidence. Keep unsuccessful runs visible rather than replacing them with an invented green badge.
+[Durable validation summary and exact scenario stages](validation/2026-10-16.json) preserve the observed results after temporary CI artifacts expire. The tested source commit is `a217ad5897dec2c5bc942bf3fda9cb2df97c3d8d`; later documentation/media-only commits do not create a new runtime-support claim.
 
-## CI usability revision
+## Still outside the verified scope
 
-YAML/JSON parsing, trusted local Helm rendering, offline manifest checks, field-path drift, server repair dry-run and scoped bundles are implemented with mocked cases. Python/YAML/JSON/TOML and shell syntax are the only static checks performed. No package build/install, tests, Helm command, Docker command, registry call, cluster API request, notification or deployment has been run. The new automatic workflow is configured for future events; this update uses a skip marker and has no passing CI evidence. Jenkins credential/job setup remains external.
+- Production/EKS/AKS/GKE clusters, alternate Kubernetes versions, admission policies, authentication plugins and operating systems.
+- Real Slack/Teams/webhook delivery, cloud infrastructure, signed image publication and a production deployment.
+- Live drift, server dry-run and scoped bundle behavior beyond the mocked regression cases.
+- Load, concurrency, sustained availability, disaster recovery and application/business SLOs.
+- Independent engineer usability feedback. Automated checks and the [offline video](walkthrough.md) are not a user study.
+
+Python 3.12+ remains the intended runtime, but only the exact observed versions above have execution evidence. Helm rendering passed in the pinned CI tool image; it is not a claim that arbitrary Helm releases/charts are compatible. No PyPI package or production release was published.

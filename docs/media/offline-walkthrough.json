@@ -1,0 +1,44 @@
+{
+  "recorded_on": "2026-10-16",
+  "source_commit": "363a50fdd883585e7acd1b98b0613169cae07c7f",
+  "python": "3.12.14",
+  "mode": "actual offline commands; synthetic fixture; edited 10-second pacing; no live repair",
+  "commands": [
+    {
+      "command": "devops-toolkit --version",
+      "exit_code": 0,
+      "stdout": "devops-toolkit 0.3.0.dev0\n",
+      "stderr": ""
+    },
+    {
+      "command": "devops-toolkit doctor",
+      "exit_code": 0,
+      "stdout": "PASS python: Python 3.12 or later is required\nPASS yaml: YAML input needs the optional extra: python -m pip install '.[yaml]'; JSON works without it\nPrerequisites only; workload health and deployment readiness are not assessed.\n",
+      "stderr": ""
+    },
+    {
+      "command": "devops-toolkit example --scenario crash --output example.json",
+      "exit_code": 0,
+      "stdout": "Saved ILLUSTRATIVE offline example. No cluster was contacted or repaired.\n",
+      "stderr": ""
+    },
+    {
+      "command": "devops-toolkit suggest --report example.json",
+      "exit_code": 0,
+      "stdout": "Troubleshooting suggestions \u2014 review evidence before changing anything.\nILLUSTRATIVE example; not real cluster evidence.\n\nIssue area: crash\nPossible causes: Application exits, invalid startup configuration, dependency failure or probe termination.\n1. Inspect current/previous container state and exit code; review previous logs locally.\n2. Check entrypoint, configuration references, dependencies and startup/probe timing.\n3. Correct the verified application/configuration issue through the owning delivery process.\nVerify: Confirm restarts stop increasing, readiness is stable and application requests succeed.\n\nNOTE: Suggestions are rule-based investigation paths, not proven root causes or guaranteed fixes.\nNOTE: No command, network query, repair, permission grant or retry is executed.\nNOTE: Old events and incomplete snapshots can mislead; verify current scope and state.\nNOTE: If investigation stalls or a mutation outcome is unknown, escalate with private evidence; do not bypass repair guards.\n",
+      "stderr": ""
+    },
+    {
+      "command": "devops-toolkit report example.json --output example.html",
+      "exit_code": 0,
+      "stdout": "Saved private evidence report. Review before sharing; recovery is not inferred.\n",
+      "stderr": ""
+    },
+    {
+      "command": "devops-toolkit handover example.json --output handover.md",
+      "exit_code": 0,
+      "stdout": "Saved private handover draft. Review before sharing; recovery is not inferred.\n",
+      "stderr": ""
+    }
+  ]
+}

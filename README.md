@@ -4,7 +4,13 @@
 
 Use this when you are about to deploy and want one readable answer to: **what is missing, what could reduce availability, and what recovery is actually approved?** During an incident, collect evidence and build a timeline rather than repeating the same investigation commands.
 
-**Status: development version `0.3.0.dev0`.** Features, regression cases and demo workflows are included. Tests, package installation/build, scanners, notification delivery and live recovery have **not been run** for this revision. Nothing is deployed or enabled. This is not a production-validated auto-healer.
+**Status: development version `0.3.0.dev0`.** Source installation, installed CLI commands, **97 local regression tests, automated offline CI and all four disposable recovery demos passed**. See the [exact results and tested versions](docs/compatibility.md), including the initial selector failure and its correction. Production deployment, real notifications and production readiness remain unverified.
+
+## Proof, walkthrough and feedback
+
+- [Observed CI, recovery results and tested versions](docs/compatibility.md).
+- [Watch the 60-second offline walkthrough](docs/walkthrough.md) — actual CLI output using a synthetic example.
+- [Try the usability tasks and report confusing steps](docs/feedback.md). Real engineer feedback has not yet been collected.
 
 ## Start here — no cluster needed
 
@@ -32,7 +38,7 @@ Open `private-reports/example.html` locally. It explains a **fabricated example*
 | `handover` | Ticket/shift draft with owner, impact and update-time fields to complete |
 | `gitops-propose` | Local image-only source patch and review notes for your normal GitOps PR process |
 
-Existing snapshots, comparisons, timelines, alerts and CI integrations are retained. Reports can show observed changes and scoped repair audit outcomes; they do not infer root cause or business recovery. No ticket, message, PR or deployment is created by these new usability commands. **Installation, runtime behavior and usability remain unverified.**
+Existing snapshots, comparisons, timelines, alerts and CI integrations are retained. Reports can show observed changes and scoped repair audit outcomes; they do not infer root cause or business recovery. No ticket, message, PR or deployment is created by these new usability commands. **Source installation and selected offline commands are verified; independent user feedback is still pending.**
 
 ## Stuck or seeing an error?
 
@@ -58,7 +64,7 @@ Unsuccessful operational commands also print a help hint. Suggestions **do not e
 | Troubleshoot one application | `bundle` | Private evidence selected through Deployment → ReplicaSet → Pod ownership |
 | Trusted live CI gate | Optional Jenkins stage | Explicit context, approved credential and private report destination; disabled by default |
 
-Automatic offline checks are configured for future matching PRs/main pushes. **This code-only update is marked `[skip ci]` to honor the instruction not to run anything yet. No successful CI run is claimed.** Existing image publication, security/release gates and deployment approvals remain separate and manual.
+Automatic offline checks run on matching PRs/main pushes. **[The first CI run passed](https://github.com/Vishnu063/devops_platform/actions/runs/38852783998)**; subsequent evidence is listed in [compatibility](docs/compatibility.md). Recovery demos also run in a four-scenario matrix for main-branch changes to their implementation/workflow, and remain manually selectable. Existing image publication, security/release gates and production deployment approvals remain separate and manual.
 
 [CI/CD integration and trust boundaries](docs/ci-integration.md) · [YAML/Helm input](docs/manifest-input.md)
 
@@ -85,7 +91,7 @@ python -m venv .venv
 python -m pip install '.[yaml]'
 ```
 
-Then use `devops-toolkit ...`. Installation is supplied as source configuration and remains unverified; no package is published to PyPI. All commands also work from the repository as `python -m devops_toolkit ...`, without installing the CLI package. The base JSON CLI uses the standard library; the optional YAML extra installs pinned PyYAML. Cluster reads need kubectl; image checks need Docker; direct chart input needs local Helm.
+Then use `devops-toolkit ...`. Source wheel build and installation were verified in a fresh Python 3.12.14 virtual environment; no package is published to PyPI. All commands also work from the repository as `python -m devops_toolkit ...`, without installing the CLI package. The base JSON CLI uses the standard library; the optional YAML extra installs pinned PyYAML. Cluster reads need kubectl; image checks need Docker; direct chart input needs local Helm.
 
 ## A practical workflow
 
@@ -171,9 +177,9 @@ devops-toolkit demo --scenario replicas
 devops-toolkit demo --scenario configuration
 ```
 
-Each creates its own local kind cluster, introduces a known fault, attempts its approved correction, checks HTTP and audit evidence, writes a timeline and removes its cluster. It requires local Docker, kind and kubectl. These commands **create and delete local resources when run**. They are not being run as part of this update.
+Each creates its own local kind cluster, introduces a known fault, attempts its approved correction, checks HTTP and audit evidence, writes a timeline and removes its cluster. It requires local Docker, kind and kubectl. These commands **create and delete local resources when run**. Execution evidence and remaining limits are recorded in [compatibility](docs/compatibility.md).
 
-Or choose **Actions → Local recovery demo → Run workflow** and select one scenario. The workflow is manual only. **All four live scenarios remain unverified.** [Demo guide](docs/demo.md).
+Or choose **Actions → Local recovery demo → Run workflow** and select one scenario. The workflow also checks all four scenarios on main-branch changes to the demo implementation/workflow. **See [observed outcomes](docs/compatibility.md), including failed attempts; a disposable demo is not production validation.** [Demo guide](docs/demo.md).
 
 ## Commands at a glance
 

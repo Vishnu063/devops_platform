@@ -45,7 +45,7 @@ Use [timeline](timeline.md) for correlated evidence and [alerts](alerts.md) for 
 
 ## Compatibility and evidence
 
-See [compatibility](compatibility.md) and [CHANGELOG](../CHANGELOG.md). All new behavior remains unexecuted for this revision. No production-readiness claim or service-level support promise is made.
+See [compatibility](compatibility.md) and [CHANGELOG](../CHANGELOG.md). See [compatibility](compatibility.md) for executed checks and remaining limits. No production-readiness claim or service-level support promise is made.
 
 ## New non-persisting investigation commands
 

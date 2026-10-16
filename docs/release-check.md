@@ -41,4 +41,4 @@ Permissions are described in [operations](operations.md). Missing namespace-wide
 
 ## Pipeline and investigation integration
 
-[Automatic offline CI](ci-integration.md) reports configuration checks separately from live readiness. [Drift](drift.md) explains desired/live field differences, [server dry-run](dry-run.md) validates an approved repair without saving it, and [workload bundles](bundle.md) collect scoped incident evidence. These additions remain unexecuted for this revision.
+[Automatic offline CI](ci-integration.md) reports configuration checks separately from live readiness. [Drift](drift.md) explains desired/live field differences, [server dry-run](dry-run.md) validates an approved repair without saving it, and [workload bundles](bundle.md) collect scoped incident evidence. Mocked regressions and offline CI have passed; live release-check/drift/dry-run/bundle validation remains outside that evidence. See [compatibility](compatibility.md).
