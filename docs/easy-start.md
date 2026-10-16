@@ -5,7 +5,23 @@ The installed offline workflow has been exercised and recorded in [the walkthrou
 
 ## 1. Install from this repository
 
-Use Python 3.12 or later in a virtual environment:
+Clone the repository first. Use Python 3.12 or later; the commands below use a POSIX shell:
+
+```bash
+git clone https://github.com/Vishnu063/devops_platform.git
+cd devops_platform
+```
+
+For the offline JSON example, you can skip package installation entirely:
+
+```bash
+python3 -m devops_toolkit doctor
+mkdir -m 700 private-reports
+python3 -m devops_toolkit example --scenario crash --output private-reports/example.json
+python3 -m devops_toolkit report private-reports/example.json --output private-reports/example.html
+```
+
+Open the resulting HTML file. This route uses the standard library and makes no cluster connection. Use a new output filename on repeat runs; existing reports are not overwritten. To get the shorter console commands and YAML support, install in a virtual environment:
 
 ```bash
 python -m venv .venv
