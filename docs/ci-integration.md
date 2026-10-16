@@ -4,7 +4,7 @@ There are two separate jobs: an **automatic offline configuration check** for PR
 
 ## Automatic GitHub pull-request checks
 
-`.github/workflows/toolkit-checks.yml` is configured for relevant pull requests, main-branch pushes and manual dispatch. It runs on an ephemeral GitHub Ubuntu runner with `contents: read` and no configured repository/cluster secrets. It does not use `pull_request_target`, a self-hosted runner, write tokens or a production environment.
+`.github/workflows/toolkit-checks.yml` is configured for all pull requests, main-branch pushes and manual dispatch. It runs on an ephemeral GitHub Ubuntu runner with `contents: read` and no configured repository/cluster secrets. It does not use `pull_request_target`, a self-hosted runner, write tokens or a production environment.
 
 The job:
 

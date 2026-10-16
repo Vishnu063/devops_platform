@@ -1,174 +1,78 @@
 # DevOps Platform Toolkit
 
-**Check a Kubernetes release, understand an incident, and recover an explicitly approved failure.**
+Check a Kubernetes release before deploying it, collect evidence when something breaks, and preview a supported repair before running it.
 
-Use this when you are about to deploy and want one readable answer to: **what is missing, what could reduce availability, and what recovery is actually approved?** During an incident, collect evidence and build a timeline rather than repeating the same investigation commands.
+The toolkit brings the usual registry, workload, Service and configuration checks into one CLI report. It also keeps snapshots and repair records so an engineer taking over an incident can see what changed.
 
-**Status: development version `0.3.0.dev0`.** Source installation, installed CLI commands, **97 local regression tests, automated offline CI and all four disposable recovery demos passed**. See the [exact results and tested versions](docs/compatibility.md), including the initial selector failure and its correction. Production deployment, real notifications and production readiness remain unverified.
+This is a development project. Local tests, installed CLI checks and four disposable Kubernetes recovery demos have passed. Cloud deployments, real alert delivery and the full signed-image release path still need validation. [See the recorded results](docs/compatibility.md).
 
-## Proof, walkthrough and feedback
+## Try it without a cluster
 
-- [Observed CI, recovery results and tested versions](docs/compatibility.md).
-- [Watch the 60-second offline walkthrough](docs/walkthrough.md) — actual CLI output using a synthetic example.
-- [Try the usability tasks and report confusing steps](docs/feedback.md). Real engineer feedback has not yet been collected.
-
-## Start here — no cluster needed
-
-Get a readable result before connecting any infrastructure:
+Requires Git and Python 3.12 or later:
 
 ```bash
-# After the source installation below:
+git clone https://github.com/Vishnu063/devops_platform.git
+cd devops_platform
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install '.[yaml]'
 devops-toolkit doctor
 mkdir -m 700 private-reports
 devops-toolkit example --scenario crash --output private-reports/example.json
 devops-toolkit report private-reports/example.json --output private-reports/example.html
 ```
 
-Open `private-reports/example.html` locally. It explains a **fabricated example**, evidence and next steps. Nothing contacts a cluster or performs a repair. Use `devops-toolkit guide` for an interactive command planner; it prints a command for review and never executes it.
+Open `private-reports/example.html` in your browser. The incident is synthetic; these commands do not contact a cluster. Run `devops-toolkit guide` for help choosing your next command.
 
-**[Follow the short walkthrough](docs/easy-start.md)** · [Reports and handovers](docs/reports.md) · [GitOps proposals](docs/gitops-proposals.md)
+[Short walkthrough](docs/easy-start.md) · [CLI demonstration](docs/walkthrough.md) · [Command reference](docs/toolkit.md)
 
-| Make everyday work easier | What you get |
+## What it helps with
+
+| Task | What you get |
 | --- | --- |
-| `doctor` | Prerequisite explanations; cluster authorization checks only with an explicit context |
-| `guide` | Task selection and prompts instead of memorizing flags; review before running |
-| `diagnose --format text` | Symptoms, evidence, uncertainty and suggested safe next reads |
-| `example` | Offline crash, image-pull and selector learning examples |
-| `report` | Standalone local HTML, Markdown or summary JSON from saved evidence |
-| `handover` | Ticket/shift draft with owner, impact and update-time fields to complete |
-| `gitops-propose` | Local image-only source patch and review notes for your normal GitOps PR process |
+| Review a release | Image availability, required Secrets/ConfigMaps, estimated pod capacity, Service matching and availability checks |
+| Investigate an incident | Scoped workload evidence, possible causes and suggested next checks |
+| Compare changes | Saved snapshots, desired-versus-live field differences and an incident timeline |
+| Prepare a repair | A preview tied to an explicitly approved target and correction |
+| Check recovery | Bounded readiness checks and an audit record of the attempted repair |
+| Share a handover | A local HTML/Markdown report or a draft for your ticket |
 
-Existing snapshots, comparisons, timelines, alerts and CI integrations are retained. Reports can show observed changes and scoped repair audit outcomes; they do not infer root cause or business recovery. No ticket, message, PR or deployment is created by these new usability commands. **Source installation and selected offline commands are verified; independent user feedback is still pending.**
+Reports distinguish `BLOCKED`, `NEEDS_REVIEW` and `CHECKS_PASSED`. Missing access and incomplete evidence stay visible. A passing check is not deployment approval, and Kubernetes readiness is not proof that users can reach the application.
 
-## Stuck or seeing an error?
+## Check a real release
 
-Get possible causes, practical checks, resolution guidance and a verification step:
+Use an explicitly selected context and a private report directory. Replace the sample names with your own workload and reviewed manifest:
+
+```bash
+devops-toolkit release-check --context YOUR_CONTEXT --namespace YOUR_NAMESPACE \
+  --deployment YOUR_DEPLOYMENT --service YOUR_SERVICE \
+  --file k8s/release.yaml --format text --output private-reports/release-check.json
+```
+
+This reads the target; it does not deploy or repair it. Registry checks need Docker, cluster reads need kubectl, and chart input needs Helm. The capacity estimate covers one pod, not a complete scheduler or rollout simulation.
+
+[Release checks](docs/release-check.md) · [YAML and Helm input](docs/manifest-input.md) · [CI integration](docs/ci-integration.md)
+
+## Troubleshoot and recover
+
+Start with investigation guidance:
 
 ```bash
 devops-toolkit suggest --issue CrashLoopBackOff
 devops-toolkit suggest --issue stuck
-# If you already saved diagnosis evidence:
-devops-toolkit suggest --report private-reports/diagnosis.json
 ```
 
-Unsuccessful operational commands also print a help hint. Suggestions **do not execute fixes or prove root cause**. If a repair outcome is uncertain, inspect its audit/live state before retrying. [Supported issues, examples and limits](docs/suggestions.md).
+For connected-cluster evidence, use `diagnose`, `incident` or `bundle`. Logs are off by default for bundles. Keep connected reports private.
 
-## Use it in your normal delivery workflow
+Direct recovery supports approved image corrections, selected container configuration, Service selectors and upward replica restoration. Preview is the default. Execution requires explicit enabling, resource opt-in and an unexpired policy tied to the target state. Recognized Argo CD/Flux ownership blocks direct repair; make the correction in Git instead.
 
-| Need | Command or integration | What happens |
-| --- | --- | --- |
-| Automatic pull-request feedback | **Toolkit configuration checks** GitHub workflow | Offline regression/configuration checks, PR check summary and report artifact; no cluster credentials |
-| Existing YAML or Helm chart | `manifest-check` / `release-check --file` or `--chart` | Direct YAML/JSON input or bounded local Helm rendering |
-| Explain Git-versus-cluster drift | `drift` | Changed desired-field paths; values are redacted and nothing is reconciled |
-| Validate a repair without saving it | `repair-dry-run` | Kubernetes server-side dry-run of the approved patch; no persisted latch or rollout |
-| Troubleshoot one application | `bundle` | Private evidence selected through Deployment → ReplicaSet → Pod ownership |
-| Trusted live CI gate | Optional Jenkins stage | Explicit context, approved credential and private report destination; disabled by default |
+Use the [policy guide](docs/policies.md) and [repair guide](docs/automatic-repair.md) before enabling execution. If an attempt has an uncertain outcome, inspect the live target and audit before trying again. Image restoration is not a database or full application rollback.
 
-Automatic offline checks run on matching PRs/main pushes. **[The first CI run passed](https://github.com/Vishnu063/devops_platform/actions/runs/38852783998)**; subsequent evidence is listed in [compatibility](docs/compatibility.md). Recovery demos also run in a four-scenario matrix for main-branch changes to their implementation/workflow, and remain manually selectable. Existing image publication, security/release gates and production deployment approvals remain separate and manual.
+[Stop controls and permissions](docs/operations.md) · [Incident timelines](docs/timeline.md) · [Outcome alerts](docs/alerts.md)
 
-[CI/CD integration and trust boundaries](docs/ci-integration.md) · [YAML/Helm input](docs/manifest-input.md)
+## Watch a recovery demo
 
-## Why a DevOps engineer would use it
-
-| Your question | What the toolkit checks | Important boundary |
-| --- | --- | --- |
-| Does this image exist? | Digest and registry access | Local registry identity; not a signature or node-pull guarantee |
-| Are Secrets and ConfigMaps available? | Required live objects and keys | No values in reports; proposed same-release objects are not assumed present |
-| Can a new pod fit? | Estimated CPU/memory headroom | One pod; not full rollout, quotas or scheduler simulation |
-| Will the Service select these pods? | Candidate labels, selectors and named ports | No proof of exclusive selection or real traffic |
-| Could this reduce availability? | Recreate, maxUnavailable, downscale, readiness and live baseline | Configuration risks, not an outage prediction |
-| What recovery is approved? | Policy expiry, scope, UID, candidate hash and opt-in | No policy means no approved direct recovery |
-
-The report says **BLOCKED**, **NEEDS_REVIEW** or **CHECKS_PASSED**, with evidence. Missing access, skipped checks and uncertainty stay visible. Passing implemented checks is not deployment approval.
-
-## Install the CLI when you are ready
-
-From this repository, using Python 3.12 or later:
-
-```bash
-python -m venv .venv
-. .venv/bin/activate
-python -m pip install '.[yaml]'
-```
-
-Then use `devops-toolkit ...`. Source wheel build and installation were verified in a fresh Python 3.12.14 virtual environment; no package is published to PyPI. All commands also work from the repository as `python -m devops_toolkit ...`, without installing the CLI package. The base JSON CLI uses the standard library; the optional YAML extra installs pinned PyYAML. Cluster reads need kubectl; image checks need Docker; direct chart input needs local Helm.
-
-## A practical workflow
-
-### 1. Check a release without deploying it
-
-```bash
-mkdir -p reports
-devops-toolkit release-check --context YOUR_CONTEXT --namespace platform \
-  --deployment YOUR_DEPLOYMENT --service YOUR_SERVICE \
-  --file k8s/release.yaml --format text --output reports/release-check.json
-```
-
-Input can be JSON, multi-document Kubernetes YAML or a trusted local Helm chart. Omit `--file` to inspect the live Deployment. Supply `--policy` if you have a reviewed recovery approval. Use `--chart ./charts/my-app --release my-app --values values/staging.yaml` instead of `--file` for local Helm rendering. [Read the six checks and limits](docs/release-check.md).
-
-### 2. Generate a policy without copying IDs or hashes
-
-Supply a reviewed JSON correction, such as container names mapped to known compatible image digests:
-
-```bash
-devops-toolkit policy create --context YOUR_CONTEXT --namespace platform \
-  --kind Deployment --name YOUR_DEPLOYMENT --action images \
-  --approved approved-images.local.json --output reports/recovery-policy.local.json
-```
-
-The generator reads live identities and hashes for you. It requires the workload's existing opt-in and preserves repair guards. It does not invent a fix or enable automation. [Examples for all four actions](docs/policies.md).
-
-### 3. Recover only after explicit enabling
-
-```bash
-devops-toolkit watch-recovery --policy reports/recovery-policy.local.json \
-  --execute --audit reports/recovery-UNIQUE-ID.jsonl
-```
-
-The image monitor waits for persistent failed-rollout evidence, makes one conditional repair and checks readiness. `repair` supports approved container fields, Service selector and upward replica restoration. Preview is the default. Scope, expiry, GitOps/HPA ownership checks, audit and attempt latches apply. Namespace pause and process stop controls are available. [Repair guide](docs/automatic-repair.md) · [Stop and permissions](docs/operations.md).
-
-### 4. Understand what happened
-
-```bash
-devops-toolkit incident --context YOUR_CONTEXT --namespace platform --output reports/before
-# Collect additional snapshots when appropriate, using new folders.
-devops-toolkit timeline reports/before/report.json reports/after/report.json \
-  --audit reports/recovery-UNIQUE-ID.jsonl --output reports/timeline.md
-```
-
-The timeline shows observed symptoms, differences and scoped repair events. It does not prove root cause. [Timeline guide](docs/timeline.md).
-
-### 5. Receive optional outcome alerts
-
-Add `--notify-config alerts.local.json` to an operational command. Configure Slack, Teams or a generic HTTPS receiver through a secret environment variable. Nothing is sent by default; sensitive reports and target identities are excluded from notifications. [Alert setup and delivery limits](docs/alerts.md).
-
-## More everyday commands
-
-```bash
-# Offline configuration only: no live registry, Secret or capacity claims.
-devops-toolkit manifest-check --file k8s/release.yaml --namespace platform \
-  --output reports/configuration.json
-
-# Compare desired fields to an explicitly selected live cluster.
-devops-toolkit drift --context YOUR_CONTEXT --namespace platform \
-  --file k8s/release.yaml --output reports/drift.json
-
-# Ask the server to validate one approved repair without persisting it.
-devops-toolkit repair-dry-run --policy reports/recovery-policy.local.json \
-  --output reports/repair-dry-run.json
-
-# Gather private evidence for this Deployment only; logs are off by default.
-devops-toolkit bundle --context YOUR_CONTEXT --namespace platform \
-  --deployment YOUR_DEPLOYMENT --output reports/workload-UNIQUE-ID
-```
-
-Use a new output file/directory and an existing private report parent. All these commands are read-only or non-persisting validation. A server dry-run still contacts the cluster and requires patch RBAC. Do not upload connected-cluster reports or bundles automatically.
-
-[Drift scope](docs/drift.md) · [Dry-run behavior](docs/dry-run.md) · [Bundle contents and privacy](docs/bundle.md)
-
-## See a repair on a disposable local cluster later
-
-The code includes four scenarios:
+The four scenarios introduce a known fault in a new local kind cluster, attempt the approved repair, check HTTP recovery and remove that cluster:
 
 ```bash
 devops-toolkit demo --scenario images
@@ -177,56 +81,17 @@ devops-toolkit demo --scenario replicas
 devops-toolkit demo --scenario configuration
 ```
 
-Each creates its own local kind cluster, introduces a known fault, attempts its approved correction, checks HTTP and audit evidence, writes a timeline and removes its cluster. It requires local Docker, kind and kubectl. These commands **create and delete local resources when run**. Execution evidence and remaining limits are recorded in [compatibility](docs/compatibility.md).
+Requires Docker, kind and kubectl. These commands create and delete disposable local resources. You can also select a scenario under **Actions → Local recovery demo → Run workflow**.
 
-Or choose **Actions → Local recovery demo → Run workflow** and select one scenario. The workflow also checks all four scenarios on main-branch changes to the demo implementation/workflow. **See [observed outcomes](docs/compatibility.md), including failed attempts; a disposable demo is not production validation.** [Demo guide](docs/demo.md).
+[Demo setup](docs/demo.md) · [Results, including the selector fix](docs/compatibility.md)
 
-## Commands at a glance
+## How the delivery project fits in
 
-| Command | Purpose | Changes cluster state? |
-| --- | --- | --- |
-| `suggest` | Possible causes, investigation/resolution steps and verification | No cluster access or automatic action |
-| `doctor` / `guide` | Prerequisite checks / interactive command planning | No; doctor contacts cluster only with explicit context |
-| `example` / `report` / `handover` | Offline learning, readable evidence and handover drafts | No cluster access |
-| `gitops-propose` | Local image-only source proposal for review | No cluster or Git changes |
-| `manifest-check` | Offline rendered configuration feedback for CI | No cluster access |
-| `release-check` | Six live/candidate checks and one readable decision | No |
-| `preflight` | Detailed configuration/reference/capacity checks | No |
-| `diagnose` | Workload symptoms and suggested next actions | No |
-| `policy create` / `policy check` | Generate private approval / validate offline | No |
-| `incident` / `bundle` | Namespace snapshot / ownership-scoped workload evidence | No |
-| `drift` | Desired-versus-live field paths | No |
-| `repair-dry-run` | Server-side approved patch validation | No persisted changes |
-| `compare` / `timeline` | Compare/correlate saved evidence offline | No |
-| `recover` / `watch-recovery` | One approved image repair | Only with `--execute` |
-| `repair` | Approved container, selector or replica correction | Only with `--execute` |
-| `demo` | Disposable local recovery scenario | Yes, its newly created local cluster only |
+The repository also contains a small Flask service for practicing delivery. GitHub Actions runs the publication pipeline; Jenkins shares the checks but does not publish. The configured release path includes tests, Gitleaks, Semgrep, Trivy, SonarQube, Snyk, an SBOM and Cosign signing, followed by a reviewed GitOps change and manual Argo CD sync.
 
-## What it will not automatically fix
+Offline toolkit checks run automatically on every pull request and main push. Image publication and deployment remain manual while the release path is being validated. Repository and environment protection must be configured in GitHub settings; workflow files cannot enforce those settings on their own.
 
-Application bugs, missing credentials, arbitrary network failures, storage corruption, node failures and control-plane disasters need an engineer or the owning platform controller. GitOps-managed resources should be repaired through approved Git state; direct repairs refuse recognized Argo CD/Flux ownership. An approved image correction is not a full revision or database rollback.
-
-Read [all Kubernetes problem types](docs/kubernetes-problems.md), [compatibility/evidence](docs/compatibility.md), [contribution guide](CONTRIBUTING.md), [security reporting](SECURITY.md) and [changelog](CHANGELOG.md). The Flask API and infrastructure below remain the separate delivery/learning target.
-
-## Delivery flow
-
-```mermaid
-flowchart TD
-  A["Manual CI run"] --> B["Tests, secrets, SAST, manifest checks"]
-  B --> C["Build once, Trivy, SBOM"]
-  C --> D["SonarQube and Snyk"]
-  D --> E["Approved publish job"]
-  E --> F["GHCR digest, signature and SBOM attestation"]
-  F --> G["Reviewed release PR"]
-  G --> H["Argo CD manual sync"]
-  H --> I["Kubernetes and monitoring"]
-```
-
-The image/security/publication flow stays manual until initial validation is complete; automatic offline toolkit checks are configured separately. A check-only run does not publish. A release run requires SonarQube and Snyk to pass before the saved image is published. Missing credentials stop the release.
-
-## Run locally
-
-The dependency lock targets **CPython 3.12 on Linux amd64**. Docker Compose also selects amd64.
+For the sample service:
 
 ```bash
 docker compose up --build -d
@@ -234,59 +99,30 @@ curl http://127.0.0.1:8080/
 docker compose down
 ```
 
-For a local Python environment:
+The dependency lock and Compose target Linux amd64 with Python 3.12. The service exposes `/`, `/health/live`, `/health/ready` and `/metrics`.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-make install
-make run
-```
+## Find your way around
 
-Gunicorn serves the application with one process and four threads per pod. Request metrics are process-local; scale pods rather than increasing worker processes.
-
-| Endpoint | Purpose |
+| Directory | Contents |
 | --- | --- |
-| GET / | Service name and source version |
-| GET /health/live | Process health |
-| GET /health/ready | Service readiness |
-| GET /metrics | Request counters and latency histogram |
+| `devops_toolkit/` | Checks, reports, incident evidence and approved repairs |
+| `app/`, `tests/` | Sample service and regression tests |
+| `ci/`, `.github/workflows/` | Shared checks and GitHub Actions workflows |
+| `charts/`, `gitops/` | Helm chart and Argo CD release configuration |
+| `infra/`, `ansible/` | Optional single-node AWS lab |
+| `monitoring/` | Metrics configuration, alert rules and dashboard |
+| `docs/` | Setup, design decisions, runbooks and validation records |
 
-The service is stateless and has no downstream dependency. Logs omit query strings and use matched routes to avoid logging arbitrary paths. Optional Ingress exposes only the exact root path; health and metrics stay internal.
+The AWS lab is not a highly available production cluster. The production chart profile needs separate infrastructure across multiple zones. Creating cloud resources may incur charges.
 
-## Project layout
+## Remaining work
 
-| Path | Contents |
-| --- | --- |
-| devops_toolkit/ | Deployment checks, evidence, diagnosis and opt-in approved repairs |
-| app/, tests/ | API and regression tests |
-| ci/ | Shared checks used by GitHub Actions and Jenkins |
-| .github/workflows/ | Check, release and reusable quality jobs |
-| charts/platform/ | Helm chart and multi-zone deployment profile |
-| gitops/ | Restricted Argo project and release configuration |
-| infra/, ansible/ | Optional single-node AWS lab |
-| monitoring/ | Scrape configuration, alerts and dashboard |
-| docs/ | Setup, decisions, runbook, learning and review notes |
+- Configure and verify main-branch and production-environment protection.
+- Validate release checks and GitOps on an authorized cloud test cluster.
+- Confirm delivery to an approved real alert receiver.
+- Run the security, publication, signature verification and deployment path end to end.
+- Have another engineer try the setup and incident workflow.
 
-## Release controls
+[Validation checklist](docs/validation-checklist.md) · [Deployment readiness](docs/readiness.md) · [Design decisions](docs/decisions.md)
 
-GitHub Actions is the publishing authority. Jenkins runs the same source, image and external quality checks, but does not publish.
-
-Releases use:
-
-- Hash-locked Python dependencies and digest-pinned base/tool images.
-- Git-history scanning with Gitleaks and local Semgrep rules.
-- Trivy and Snyk gates for high/critical container vulnerabilities.
-- SonarQube analysis and a blocking quality gate.
-- The same saved image archive across scanning and publication.
-- Cosign keyless signing and an SBOM attestation on the registry digest.
-
-Configure the GitHub `production` environment with required reviewers and main-only deployment rules. The workflow declaration alone does not enforce those account settings. Signature verification is a release-review step; cluster admission enforcement is not included.
-
-## Deployment profiles
-
-The default chart runs a small lab. The production profile requires an approved image digest, at least three eligible nodes across two zones, metrics-server and a NetworkPolicy-enforcing CNI. It adds strict placement and autoscaling; it does not provision that infrastructure.
-
-Terraform and Ansible deliberately remain a **single-node lab**. They are not a production cluster or a free-cost guarantee. EC2, storage and public IPv4 may be billed.
-
-Start with [the walkthrough](docs/start-here.md), [toolkit commands](docs/toolkit.md), [setup](docs/setup.md), [design decisions](docs/decisions.md), [runbook](docs/runbook.md), [learning](docs/learning.md), and [review findings](docs/review.md). [Deployment notes](docs/readiness.md) list the evidence still needed before production use.
+Contributions should describe a reproducible problem and include the checks actually run. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).

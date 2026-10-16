@@ -29,3 +29,7 @@ Configure GitHub branch/environment protection before publishing. Offline toolki
 See [compatibility](compatibility.md) for commit-specific test, installation, CI and disposable demo outcomes. Those checks do not prove production readiness. Earlier code-only additions intentionally deferred execution; the current record supersedes those historical unexecuted-status notes.
 
 Remaining work includes production-like load/shutdown behavior, live command compatibility beyond the demos, security/release pipeline execution, cloud/GitOps integration, real alert delivery, operator controls and independent usability feedback. No production deployment or infrastructure provisioning was performed.
+
+## Track the remaining checks
+
+Use the [validation checklist](validation-checklist.md) for branch protection, cloud-cluster acceptance, real notification delivery, the release path and independent feedback. Mark an item complete only when its execution evidence has been recorded.

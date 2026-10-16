@@ -33,7 +33,7 @@ Use the issue and pull-request templates. Security findings should follow [SECUR
 
 ## Project status
 
-This is an unvalidated development version. No release tag, package registry publication, successful live-drill result or production support promise is implied. Dependency, integration and Kubernetes compatibility still need execution evidence.
+This is a development version with recorded local tests, installed CLI checks and four successful disposable Kubernetes recovery demos. See [compatibility](docs/compatibility.md) for the exact source commits and environments. Production/cloud validation, real alert delivery and the full release path remain pending. No published package or production support promise is implied.
 
 ## Pipeline and manifest-input changes
 
