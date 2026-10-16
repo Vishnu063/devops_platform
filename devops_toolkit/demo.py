@@ -124,6 +124,13 @@ def summary(report):
     return "\n".join(lines)
 
 
+def selector_fault_observed(target, slices):
+    """An empty or null API endpoint list has no ready endpoints."""
+    return target['spec'].get('selector') == {'app': 'wrong-demo-selector'} and not any(
+        (endpoint.get('conditions') or {}).get('ready') is True
+        for item in slices for endpoint in (item.get('endpoints') or []))
+
+
 def run_demo(output=None, keep_cluster=False, scenario="images"):
     prerequisites()  # No files or clusters created when prerequisites are missing.
     run_id = uuid.uuid4().hex[:12]
@@ -234,8 +241,7 @@ def run_demo(output=None, keep_cluster=False, scenario="images"):
                 observed = failed_rollout(target)
             elif scenario == "selector":
                 slices = json.loads(kubectl("get", "endpointslices", "-l", "kubernetes.io/service-name=" + APP, "-o", "json").stdout)["items"]
-                observed = target["spec"].get("selector") == {"app": "wrong-demo-selector"} and not any(
-                    e.get("conditions", {}).get("ready") is True for item in slices for e in item.get("endpoints", []))
+                observed = selector_fault_observed(target, slices)
             else:
                 observed = target["spec"].get("replicas") == 1 and target.get("status", {}).get("replicas") == 1
             if observed:
@@ -300,7 +306,8 @@ def run_demo(output=None, keep_cluster=False, scenario="images"):
                 "--output", str(directory / "timeline.md"))
         passed(stage)
         report["result"] = "PASS"
-    except (DemoError, OSError, ValueError, KeyError, TypeError, KeyboardInterrupt):
+    except (DemoError, OSError, ValueError, KeyError, TypeError, KeyboardInterrupt) as error:
+        report["failure_type"] = type(error).__name__
         report["stages"].append({"stage": stage, "status": "FAIL"})
         report["result"] = "FAIL"
         print("FAIL " + stage + "; inspect local evidence. No recovery retry was made.", file=sys.stderr)

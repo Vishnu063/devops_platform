@@ -10,6 +10,13 @@ from devops_toolkit.recovery import fingerprint
 
 
 class DemoTests(unittest.TestCase):
+    def test_selector_observation_handles_null_and_converging_endpoint_lists(self):
+        target = {'spec': {'selector': {'app': 'wrong-demo-selector'}}}
+        self.assertTrue(demo.selector_fault_observed(target, [{'endpoints': None}]))
+        self.assertTrue(demo.selector_fault_observed(target, [{'endpoints': []}]))
+        self.assertFalse(demo.selector_fault_observed(target, [{'endpoints': [{'conditions': {'ready': True}}]}]))
+        self.assertFalse(demo.selector_fault_observed({'spec': {'selector': {'app': demo.APP}}}, []))
+
     def test_manifest_is_isolated_and_opts_in_only_demo_deployment(self):
         objects = demo.manifests()['items']
         namespace, deployment, service = objects

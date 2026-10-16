@@ -129,7 +129,7 @@ def service_ready(kube, obj):
                    for owner in item.get('metadata', {}).get('ownerReferences', [])) and
                any(e.get('conditions', {}).get('ready') is True and
                    not e.get('conditions', {}).get('terminating', False) and e.get('addresses')
-                   for e in item.get('endpoints', [])) for item in slices)
+                   for e in (item.get('endpoints') or [])) for item in slices)
 
 
 def monitor(path, execute=False, audit=None, interval=15, max_wait=900, timeout=180):
