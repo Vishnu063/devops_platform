@@ -1,26 +1,8 @@
 name: Toolkit configuration checks
 on:
   pull_request:
-    paths:
-      - devops_toolkit/**
-      - tests/**
-      - charts/**
-      - ci/**
-      - pyproject.toml
-      - .github/workflows/toolkit-checks.yml
-      - README.md
-      - docs/**
   push:
     branches: [main]
-    paths:
-      - devops_toolkit/**
-      - tests/**
-      - charts/**
-      - ci/**
-      - pyproject.toml
-      - .github/workflows/toolkit-checks.yml
-      - README.md
-      - docs/**
   workflow_dispatch:
 permissions:
   contents: read
