@@ -9,6 +9,8 @@ pipeline {
     timeout(time: 45, unit: 'MINUTES')
   }
   parameters {
+    booleanParam(name: 'RUN_COMPOSE_DEPLOY', defaultValue: false,
+      description: 'Deploy validated image to the existing local Compose API with health check and rollback (trusted main agent only)')
     booleanParam(name: 'RUN_LIVE_RELEASE_CHECK', defaultValue: false,
       description: 'Trusted main only; requires administrator-configured private runner, credentials and target/report variables')
   }
@@ -41,6 +43,10 @@ pipeline {
     stage('Build and scan') {
       when { expression { env.SKIP_TOOLKIT_CI != 'true' } }
       steps { sh 'bash ci/build-image.sh' }
+    }
+    stage('Deploy to Docker Compose (explicit opt-in)') {
+      when { expression { env.SKIP_TOOLKIT_CI != 'true' && env.BRANCH_NAME == 'main' && params.RUN_COMPOSE_DEPLOY } }
+      steps { sh 'bash ci/deploy-compose.sh' }
     }
     stage('Live release check (explicit opt-in)') {
       when { expression { env.SKIP_TOOLKIT_CI != 'true' && params.RUN_LIVE_RELEASE_CHECK } }
