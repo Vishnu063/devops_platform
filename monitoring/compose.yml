@@ -5,6 +5,7 @@ services:
       - "127.0.0.1:9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -15,6 +16,35 @@ services:
     mem_limit: 256m
     cpus: 0.5
     security_opt: [no-new-privileges:true]
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/credentials/.+|var/lib/docker/.+)($|/)
+    volumes:
+      - /:/host:ro,rslave
+    restart: unless-stopped
+    read_only: true
+    mem_limit: 64m
+    cpus: 0.2
+    security_opt: [no-new-privileges:true]
+
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.53.0
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    restart: unless-stopped
+    mem_limit: 192m
+    cpus: 0.4
 
   grafana:
     image: grafana/grafana:12.2.0
