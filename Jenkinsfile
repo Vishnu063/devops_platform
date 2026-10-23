@@ -51,7 +51,7 @@ pipeline {
       }
     }
     stage('External quality gates') {
-      when { expression { env.SKIP_TOOLKIT_CI != 'true' } }
+      when { expression { env.RUN_EXTERNAL_GATES == 'true' } }
       steps {
         withCredentials([
           string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN'),
