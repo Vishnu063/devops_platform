@@ -1,0 +1,38 @@
+groups:
+  - name: devops-platform
+    rules:
+      - alert: PlatformApplicationDown
+        expr: up{job="devops-platform"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: DevOps Platform application metrics endpoint is unreachable
+      - alert: PlatformExporterDown
+        expr: up{job=~"node|cadvisor"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Infrastructure monitoring exporter is unreachable
+      - alert: PlatformHighCPU
+        expr: 100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: EC2 CPU has been above 85 percent for 5 minutes
+      - alert: PlatformHighMemory
+        expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: EC2 RAM usage exceeds 90 percent
+      - alert: PlatformLowDiskSpace
+        expr: 100 * (1 - node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Root disk usage exceeds 85 percent
