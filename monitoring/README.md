@@ -35,3 +35,25 @@ To stop monitoring (preserving its volumes):
 ```bash
 docker compose -f compose.yml -f monitoring/compose.yml stop prometheus grafana
 ```
+
+## Infrastructure monitoring (EC2 + Docker)
+
+Additional services: Node Exporter (Linux CPU/RAM/disk/network) and cAdvisor (Docker resource metrics). Neither exposes a public host port. cAdvisor runs **privileged** with host filesystem mounts; use this configuration only on a dedicated/trusted lab host and review the risk before production use. Memory limits: Node Exporter 64 MiB, cAdvisor 192 MiB, Prometheus 256 MiB, Grafana 384 MiB.
+
+On EC2, after pulling new code, start the exporters and recreate Prometheus/Grafana to pick up provisioned files:
+```bash
+cd ~/devops_platform
+read -rsp 'Grafana admin password (existing password is fine): ' GRAFANA_ADMIN_PASSWORD; echo
+export GRAFANA_ADMIN_PASSWORD
+docker compose -f compose.yml -f monitoring/compose.yml up -d --no-build --no-deps node-exporter cadvisor prometheus grafana
+```
+
+Check targets at `http://127.0.0.1:9090/api/v1/targets`. All three jobs (`devops-platform`, `node`, `cadvisor`) should show **up**. For a short query:
+```bash
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=up'
+```
+Open the existing Grafana dashboard to view six additional host/container charts. If Docker panels show no data even though `up{job="cadvisor"}=1`, inspect cAdvisor's available container metric labels and adjust dashboard filters; cAdvisor versions expose different labels.
+
+Prometheus evaluates alerts in `monitoring/alerts.yml` for application down, exporter down, high CPU/RAM, and low root-disk space. View firing/pending alerts under **Prometheus → Alerts**. **No notification destination has been configured**, so alerts are local only; external email/Slack delivery requires a receiver and separate explicit credentials/configuration.
+
+Do not open EC2 inbound ports 9100, 8080 (cAdvisor), 3000, or 9090. These exporters only connect inside the Docker Compose network.
