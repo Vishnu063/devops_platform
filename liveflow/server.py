@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import subprocess
-from threading import Lock
+from threading import Lock, BoundedSemaphore
 from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 import os
@@ -199,10 +199,20 @@ class Collector:
     def __init__(self, args):
         self.args=args
         self.lock=Lock()
+        self.poll_gate=BoundedSemaphore(1)
+        self.cached_snapshot=None
         self.previous={}
         self.events=deque(maxlen=60)
         self.started=set()
     def snapshot(self):
+        if not self.poll_gate.acquire(blocking=False):
+            cached=self.cached_snapshot or {'at':datetime.now(timezone.utc).isoformat(),'groups':{},'sources':{'collector':{'ok':False,'warning':'A read is in progress; no fresh evidence yet'}},'events':[],'intervalSeconds':5}
+            return {**cached,'busy':True}
+        try:
+            self.cached_snapshot=self._snapshot()
+            return self.cached_snapshot
+        finally:self.poll_gate.release()
+    def _snapshot(self):
         with self.lock:
             groups={}
             configs={'docker': lambda:docker_resources()}

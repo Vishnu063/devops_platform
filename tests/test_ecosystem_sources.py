@@ -16,3 +16,15 @@ class EcosystemSourcesTests(unittest.TestCase):
   with patch.object(module,'run',return_value='{"items":[{"metadata":{"name":"demo"},"status":{"health":{"status":"Healthy"},"sync":{"status":"OutOfSync"}}}]}') as command:
    nodes,_,_=module.argocd_resources(args);self.assertEqual('warning',nodes[0]['status']);self.assertIn('OutOfSync',nodes[0]['detail'])
    self.assertIn('get',command.call_args.args[0]);self.assertNotIn('sync',command.call_args.args[0])
+
+class PollCapacityTests(unittest.TestCase):
+ def test_slow_sources_do_not_accumulate_parallel_collection_work(self):
+  import threading
+  args=SimpleNamespace(context=None,jenkins_url=None,jenkins_job=None)
+  entered=threading.Event();release=threading.Event();collector=module.Collector(args)
+  def slow():entered.set();release.wait(timeout=2);return [],[],None
+  with patch.object(module,'docker_resources',side_effect=slow) as source:
+   worker=threading.Thread(target=collector.snapshot);worker.start()
+   try:
+    self.assertTrue(entered.wait(timeout=1));self.assertTrue(collector.snapshot()['busy']);self.assertEqual(1,source.call_count)
+   finally:release.set();worker.join(timeout=2)
