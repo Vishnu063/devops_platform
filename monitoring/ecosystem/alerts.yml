@@ -1,0 +1,22 @@
+groups:
+  - name: cloudlaunch-ecosystem
+    rules:
+      - alert: CloudLaunchApplicationDown
+        expr: up{job="cloudlaunch-ecosystem"} == 0 or cloudlaunch_database_healthy == 0
+        for: 2s
+        labels: {severity: critical}
+        annotations:
+          summary: CloudLaunch application scrape or database readiness failed
+      # Add the existing Platform monitoring scrape jobs before enabling these.
+      - alert: EcosystemContainerRepeatedRestarts
+        expr: changes(container_start_time_seconds{name!=""}[10m]) > 3
+        for: 1m
+        labels: {severity: warning}
+      - alert: EcosystemKubernetesCrashLoop
+        expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+        for: 1m
+        labels: {severity: warning}
+      - alert: EcosystemMemoryPressure
+        expr: 1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels: {severity: warning}

@@ -1,5 +1,11 @@
 # DevOps Platform Toolkit
 
+## Optional ecosystem integration
+
+Optional CloudLaunch/Pilot scrapes, Alertmanager routing and an ecosystem dashboard configuration. `/ecosystem` opens with explicit disconnected states and no cluster requirement; existing Kubernetes/GitOps toolkit workflows remain independent.
+
+[Architecture, configuration, test evidence and known limits](monitoring/ecosystem/README.md).
+
 [Reviewer walkthrough](INTERVIEW.md) · [Portfolio](https://github.com/Vishnu063/Vishnu063/blob/main/PORTFOLIO.md)
 
 **Check a Kubernetes release, understand an incident, and recover an explicitly approved failure.**

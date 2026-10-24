@@ -1,0 +1,15 @@
+route:
+  receiver: ops-pilot
+  group_by: [alertname, service]
+  group_wait: 1s
+  group_interval: 5s
+  repeat_interval: 1m
+receivers:
+  - name: ops-pilot
+    webhook_configs:
+      - url: http://127.0.0.1:PILOT_PORT/api/events
+        send_resolved: true
+        max_alerts: 50
+        http_config:
+          authorization:
+            credentials_file: TOKEN_FILE

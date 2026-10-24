@@ -48,6 +48,24 @@ def create_app():
     def release():
         return jsonify(service="devops-platform", version=version)
 
+    @app.get("/api/integrations")
+    def integrations():
+        # No implicit kubectl context, credentials, remote fetch or mutation.
+        return jsonify(kubernetes={"status": "disconnected", "reason": "Select an explicit context with the read-only toolkit"},
+                       argocd={"status": "disconnected"}, helm={"status": "disconnected"},
+                       ops_pilot={"status": "configured" if os.getenv("OPS_PILOT_EVENTS_URL") else "disabled",
+                                  "scope": "Optional external event ingestion; connectivity not inferred"})
+
+    @app.get("/ecosystem")
+    def ecosystem():
+        return Response("""<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>DevOps Platform connections</title>
+<h1>DevOps Platform connections</h1><p>Kubernetes: disconnected. Argo CD: disconnected. Helm: disconnected.</p>
+<p>This view opens without a cluster. No infrastructure is contacted or changed.</p>
+<p>Use the existing toolkit with an explicit context for pod/deployment status, events, release checks and saved HTML reports.</p>
+<p>CloudLaunch → Prometheus / Alertmanager → Ops Pilot → human approval → recovery verification.</p>
+<p>Ops Pilot owns incident approvals. See /api/integrations for configured integration status.</p></html>""", content_type="text/html")
+
     @app.get("/health/live")
     def live():
         return jsonify(status="alive")
