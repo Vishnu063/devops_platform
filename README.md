@@ -297,3 +297,14 @@ Start with [the walkthrough](docs/start-here.md), [toolkit commands](docs/toolki
 ## Optional five-project incident integration
 
 The existing LiveFlow topology viewer now accepts optional read-only Kubernetes events, Helm releases, Argo Application CRs and Ops Pilot incidents. A disconnected source is explicit and no Kubernetes cluster is needed to open the dashboard. The toolkit's existing diagnostics remain authoritative; the viewer cannot approve or execute repairs. [Integration, monitoring profiles, credentials, resources and verification](docs/ECOSYSTEM.md). An opt-in monitoring configuration reuses Prometheus/Grafana with Alertmanager routing; Grafana is a viewer/alerting UI, not a log database.
+
+Integration evidence: [source/concurrency tests](https://github.com/Vishnu063/devops_platform/actions/runs/40074262896), toolkit/docs checks, and the [real read-only incident view in shared recovery CI](https://github.com/Vishnu063/ops-pilot/actions/runs/40074300156). Live cluster/Argo/Helm/Grafana and host-resource alert triggers remain explicitly unverified. [Five-project architecture/results and source refs](https://github.com/Vishnu063/ops-pilot/blob/feat/unified-devops-engineer/docs/ECOSYSTEM-RESULTS.md).
+
+```mermaid
+flowchart LR
+  K[Optional Kubernetes / Helm / Argo reads] --> L[LiveFlow topology]
+  O[Ops Pilot read-only incident API] --> L
+  M[Existing application / host metrics] --> P[Optional Prometheus + Grafana]
+  P --> A[Authenticated alerts to Ops Pilot]
+```
+
