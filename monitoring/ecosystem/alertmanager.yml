@@ -1,0 +1,16 @@
+route:
+  receiver: ops-pilot
+  group_by: [alertname, service]
+  group_wait: 1s
+  group_interval: 5s
+  repeat_interval: 1h
+receivers:
+  - name: ops-pilot
+    webhook_configs:
+      - url: http://127.0.0.1:8767/webhooks/alertmanager
+        send_resolved: true
+        max_alerts: 100
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/keys/alert
