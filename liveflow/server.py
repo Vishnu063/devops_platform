@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import subprocess
-from threading import Lock
+from threading import Lock, BoundedSemaphore
 from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 import os
@@ -155,14 +155,64 @@ def jenkins_resources(url, job):
     return nodes, edges, warning
 
 
+
+def optional_cluster_sources(args):
+    """Fixed read-only commands. Absence/failure is a labelled disconnected source."""
+    nodes=[];edges=[]
+    if not args.context:return nodes,edges,'Kubernetes disconnected: explicit context not configured'
+    base=['kubectl','--context',args.context,'--namespace',args.namespace,'--request-timeout=5s']
+    events=json.loads(run([*base,'get','events','-o','json'],timeout=8))
+    for item in events.get('items',[])[:MAX_RESOURCES]:
+        meta=item.get('metadata',{});reason=item.get('reason','unknown')
+        nodes.append(node('k8s:event:'+meta.get('uid',meta.get('name','unknown')),reason,'Event','kubernetes',
+                          'warning' if item.get('type')=='Warning' else 'neutral',str(item.get('message',''))[:200]))
+    return nodes,edges,None
+
+
+def helm_resources(args):
+    if not args.context:return [],[],'Helm disconnected: explicit Kubernetes context required'
+    items=json.loads(run(['helm','--kube-context',args.context,'--namespace',args.namespace,'list','--output','json','--max','60'],timeout=8))
+    return [node('helm:'+str(i.get('name')),str(i.get('name')),'Helm release','helm','healthy' if i.get('status')=='deployed' else 'warning',str(i.get('chart'))) for i in items[:MAX_RESOURCES]],[],None
+
+
+def argocd_resources(args):
+    if not args.context:return [],[],'Argo CD disconnected: explicit Kubernetes context required'
+    items=json.loads(run(['kubectl','--context',args.context,'--namespace',args.argocd_namespace,'--request-timeout=5s','get','applications.argoproj.io','-o','json'],timeout=8))
+    result=[]
+    for i in items.get('items',[])[:MAX_RESOURCES]:
+        status=i.get('status',{});health=status.get('health',{}).get('status','Unknown');sync=status.get('sync',{}).get('status','Unknown')
+        name=i.get('metadata',{}).get('name','unknown')
+        result.append(node('argocd:'+name,name,'Argo application','argocd','healthy' if health=='Healthy' and sync=='Synced' else 'warning',health+' / '+sync))
+    return result,[],None
+
+
+def incident_resources(args):
+    if not args.ops_pilot_url:return [],[],'Ops Pilot disconnected: optional URL not configured'
+    # Shared versioned transport is optional; standalone dashboard needs no package.
+    from triage.ecosystem import endpoint,transport
+    url=endpoint(args.ops_pilot_url)+'/integration/state'
+    data=transport(url,os.environ.get('OPS_PILOT_READ_TOKEN',''),retries=0)
+    return [node('incident:'+i['id'],i['service'],'Incident','ops-pilot','healthy' if i['status']=='verified' else 'warning',i['status']) for i in data.get('incidents',[])[:MAX_RESOURCES]],[],None
+
+
 class Collector:
     def __init__(self, args):
         self.args=args
         self.lock=Lock()
+        self.poll_gate=BoundedSemaphore(1)
+        self.cached_snapshot=None
         self.previous={}
         self.events=deque(maxlen=60)
         self.started=set()
     def snapshot(self):
+        if not self.poll_gate.acquire(blocking=False):
+            cached=self.cached_snapshot or {'at':datetime.now(timezone.utc).isoformat(),'groups':{},'sources':{'collector':{'ok':False,'warning':'A read is in progress; no fresh evidence yet'}},'events':[],'intervalSeconds':5}
+            return {**cached,'busy':True}
+        try:
+            self.cached_snapshot=self._snapshot()
+            return self.cached_snapshot
+        finally:self.poll_gate.release()
+    def _snapshot(self):
         with self.lock:
             groups={}
             configs={'docker': lambda:docker_resources()}
@@ -170,6 +220,10 @@ class Collector:
                 configs['kubernetes']=lambda:kube_resources(self.args.context,self.args.namespace)
             if self.args.jenkins_url and self.args.jenkins_job:
                 configs['jenkins']=lambda:jenkins_resources(self.args.jenkins_url,self.args.jenkins_job)
+            if getattr(self.args,'cluster_events',False):configs['cluster-events']=lambda:optional_cluster_sources(self.args)
+            if getattr(self.args,'helm',False):configs['helm']=lambda:helm_resources(self.args)
+            if getattr(self.args,'argocd_namespace',None):configs['argocd']=lambda:argocd_resources(self.args)
+            if getattr(self.args,'ops_pilot_url',None):configs['ops-pilot']=lambda:incident_resources(self.args)
             source_state={}
             now=datetime.now(timezone.utc).isoformat(timespec='seconds')
             for source, fetch in configs.items():
@@ -193,7 +247,7 @@ class Collector:
                     # Retain old nodes; failed API calls are not proof resources were deleted.
                     groups[source]={'nodes':[dict(n,status='unknown') for n in self.previous.get(source,{}).values()], 'edges':[]}
                     source_state[source]={'ok':False,'warning':str(ex)[:200]}
-            return {'at':now, 'groups':groups, 'sources':source_state, 'events':list(self.events), 'intervalSeconds':5}
+            return {'at':now, 'groups':groups, 'sources':source_state, 'events':list(self.events), 'intervalSeconds':5,'security':{'status':'not configured','note':'No vulnerability scanner or log backend connected; absence is not a clean security finding'}}
 
 
 def serve(args):
@@ -235,6 +289,10 @@ def main(argv=None):
     parser.add_argument('--namespace',default='default',help='Kubernetes namespace to observe (default: default)')
     parser.add_argument('--jenkins-url',help='HTTPS URL, or loopback HTTP URL, for Jenkins')
     parser.add_argument('--jenkins-job',help='Jenkins job name, optionally folder/job')
+    parser.add_argument('--cluster-events',action='store_true',help='Read-only namespaced Kubernetes events')
+    parser.add_argument('--helm',action='store_true',help='Read-only Helm release status')
+    parser.add_argument('--argocd-namespace',help='Read-only Argo Application CRs in this explicit namespace')
+    parser.add_argument('--ops-pilot-url',help='Optional loopback HTTP or HTTPS base URL; read-only credential comes from OPS_PILOT_READ_TOKEN')
     args=parser.parse_args(argv)
     if not (1<=args.port<=65535): parser.error('port must be from 1 through 65535')
     if (args.jenkins_url is None) != (args.jenkins_job is None): parser.error('Provide both --jenkins-url and --jenkins-job')
@@ -245,3 +303,4 @@ def main(argv=None):
     serve(args)
 
 if __name__=='__main__': main()
+

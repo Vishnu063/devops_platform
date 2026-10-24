@@ -1,0 +1,161 @@
+{
+  "uid": "devops-ecosystem",
+  "title": "DevOps ecosystem \u00b7 optional sources",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Application readiness",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "probe_success{job=\"ecosystem-app\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Deployment status",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "cloudlaunch_deployment_status",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Active incidents",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "ops_pilot_incidents_active",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "CPU utilization",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Memory utilization",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Current firing alerts",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Verified recovery count",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ecosystem-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "ops_pilot_incidents_verified",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "tags": [
+    "ecosystem",
+    "no-log-storage"
+  ],
+  "description": "Missing series mean disconnected/unconfigured. Prometheus stores metrics; use an existing log backend for logs. Alert history is retained in the Ops Pilot private audit."
+}
