@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 from threading import Lock, BoundedSemaphore
 from urllib.parse import quote, urlparse
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
 import os
 
 ROOT = Path(__file__).resolve().parent
@@ -22,7 +22,7 @@ def run(command, timeout=6):
     except (OSError, subprocess.TimeoutExpired) as e:
         raise RuntimeError(type(e).__name__ + ': ' + str(e)[:180]) from e
     if proc.returncode != 0:
-        raise RuntimeError((proc.stderr.strip() or 'Command failed')[:180])
+        raise RuntimeError('Configured read-only command failed; inspect local permissions and native CLI diagnostics')
     return proc.stdout
 
 
@@ -119,6 +119,9 @@ def kube_resources(context, namespace):
 
 def jenkins_resources(url, job):
     # Only configured by CLI user, not a request parameter. Jenkins API token never goes to browser.
+    parsed = urlparse(url)
+    if parsed.username or parsed.password or parsed.query or parsed.fragment or not parsed.hostname or (parsed.scheme != 'https' and not (parsed.scheme == 'http' and parsed.hostname in ('127.0.0.1','localhost','::1'))):
+        raise ValueError('Jenkins requires HTTPS or an explicit loopback endpoint without embedded credentials')
     url = url.rstrip('/')
     segments = [segment for segment in job.split('/') if segment]
     path = '/'.join('job/' + quote(segment,safe='') for segment in segments)
@@ -130,9 +133,14 @@ def jenkins_resources(url, job):
         credentials = base64.b64encode(f'{user}:{token}'.encode()).decode()
         headers['Authorization'] = 'Basic ' + credentials
     def get(path):
+        class NoRedirect(HTTPRedirectHandler):
+            def redirect_request(self, *args):
+                return None
         req=Request(build + path, headers=headers)
-        with urlopen(req, timeout=5) as response:
-            return json.loads(response.read(524288))
+        with build_opener(ProxyHandler({}), NoRedirect()).open(req, timeout=5) as response:
+            raw=response.read(524289)
+            if len(raw)>524288:raise ValueError('Jenkins evidence exceeds bounds')
+            return json.loads(raw)
     info=get('api/json?tree=number,result,building')
     stages=[]; warning=None
     try:
@@ -246,7 +254,7 @@ class Collector:
                 except Exception as ex:
                     # Retain old nodes; failed API calls are not proof resources were deleted.
                     groups[source]={'nodes':[dict(n,status='unknown') for n in self.previous.get(source,{}).values()], 'edges':[]}
-                    source_state[source]={'ok':False,'warning':str(ex)[:200]}
+                    source_state[source]={'ok':False,'warning':'Configured source unavailable ('+type(ex).__name__+'); inspect scope, tools and read permissions locally'}
             return {'at':now, 'groups':groups, 'sources':source_state, 'events':list(self.events), 'intervalSeconds':5,'security':{'status':'not configured','note':'No vulnerability scanner or log backend connected; absence is not a clean security finding'}}
 
 

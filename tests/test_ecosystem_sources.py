@@ -5,6 +5,14 @@ import unittest
 from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('liveflow',Path(__file__).resolve().parents[1]/'liveflow/server.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 class EcosystemSourcesTests(unittest.TestCase):
+ def test_jenkins_rejects_insecure_and_credential_urls(self):
+  for url in ['http://remote.example','https://user:password@example.com','https://example.com/?token=secret']:
+   with self.assertRaises(ValueError):module.jenkins_resources(url,'owned-job')
+ def test_native_stderr_does_not_enter_source_warning(self):
+  from types import SimpleNamespace
+  with patch.object(module.subprocess,'run',return_value=SimpleNamespace(returncode=1,stderr='token=PRIVATE')):
+   with self.assertRaises(RuntimeError) as raised:module.run(['kubectl','get','pods'])
+  self.assertNotIn('PRIVATE',str(raised.exception))
  def test_cluster_and_incident_sources_are_optional_and_disconnected(self):
   args=SimpleNamespace(context=None,ops_pilot_url=None)
   with patch.object(module,'run') as command:

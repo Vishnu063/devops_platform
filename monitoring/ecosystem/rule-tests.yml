@@ -1,0 +1,60 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 10s
+tests:
+  - interval: 10s
+    input_series:
+      - series: 'probe_success{job="ecosystem-app"}'
+        values: '0+0x6'
+    alert_rule_test:
+      - eval_time: 20s
+        alertname: EcosystemApplicationDown
+        exp_alerts:
+          - exp_labels: {job: ecosystem-app, severity: critical, service: ecosystem-demo}
+            exp_annotations: {summary: Configured application HTTP readiness probe failed}
+  - interval: 1m
+    input_series:
+      - series: node_memory_MemTotal_bytes
+        values: '100+0x10'
+      - series: node_memory_MemAvailable_bytes
+        values: '5+0x10'
+      - series: 'node_cpu_seconds_total{mode="idle"}'
+        values: '0+0x10'
+      - series: kube_deployment_spec_replicas
+        values: '1+0x10'
+      - series: kube_deployment_status_replicas_available
+        values: '0+0x10'
+      - series: 'container_start_time_seconds{container_label_io_ops_pilot_service="ecosystem-demo"}'
+        values: '0+1x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: EcosystemMemoryPressure
+        exp_alerts:
+          - exp_labels: {severity: warning, service: ecosystem-demo}
+      - eval_time: 6m
+        alertname: EcosystemCPUPressure
+        exp_alerts:
+          - exp_labels: {severity: warning, service: ecosystem-demo}
+      - eval_time: 6m
+        alertname: EcosystemRolloutUnavailable
+        exp_alerts:
+          - exp_labels: {severity: warning, service: ecosystem-demo}
+      - eval_time: 6m
+        alertname: EcosystemRepeatedRestarts
+        exp_alerts:
+          - exp_labels: {container_label_io_ops_pilot_service: ecosystem-demo, severity: warning, service: ecosystem-demo}
+  - interval: 1m
+    input_series:
+      - series: node_memory_MemTotal_bytes
+        values: '100+0x10'
+      - series: node_memory_MemAvailable_bytes
+        values: '80+0x10'
+      - series: 'node_cpu_seconds_total{mode="idle"}'
+        values: '0+60x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: EcosystemMemoryPressure
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: EcosystemCPUPressure
+        exp_alerts: []
