@@ -15,3 +15,7 @@ Prometheus limit 192 MiB/0.5 CPU, Alertmanager 64 MiB/0.25 CPU, Blackbox 48 MiB/
 `python -m unittest discover -s tests -p test_ecosystem_sources.py -v` checks disconnected operation and fixed read-only Argo collection. Actual Docker/Prometheus/Alertmanager/event/approval/recovery results are recorded in Ops Pilot's integration CI/runbook; collector fixtures do not establish live cluster acceptance. Prometheus/K8sGPT use Apache-2.0 and Grafana AGPL-3.0; upstream source is not copied. Model/provider rights remain separate.
 
 Collection concurrency is bounded to one pass. If an optional source is slow, overlapping browser polls receive an explicitly busy cached snapshot rather than starting more collectors or queueing unbounded work. Cached timestamps remain unchanged; cached data is not fresh evidence. The concurrency regression test blocks a source and confirms a second request does not invoke it.
+
+## Reviewed ancestry and alert evaluation
+
+PR #13 now targets main and contains its required LiveFlow dependency. A normal merge preserves current main's security, pipeline and existing host monitoring; no history is rewritten and #12 is not merged automatically. `monitoring/ecosystem/rule-tests.yml` evaluates actual Prometheus alert expressions using synthetic healthy/unhealthy series. Read-only/Jenkins transport bounds and optional-source behavior have regression coverage. Real exporter provisioning and live pressure triggers remain separate.

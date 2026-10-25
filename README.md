@@ -308,3 +308,8 @@ flowchart LR
   P --> A[Authenticated alerts to Ops Pilot]
 ```
 
+
+## Self-hosted integration review (2026-10-25)
+
+[Ops Pilot setup and read-only permission guide](https://github.com/Vishnu063/ops-pilot/blob/feat/public-selfhosted-readiness/docs/SELF-HOSTING.md) · [Current cross-project readiness and actual evidence](https://github.com/Vishnu063/ops-pilot/blob/feat/public-selfhosted-readiness/docs/PUBLIC-READINESS.md).
+PR #13 now targets main after a normal two-parent merge preserving current main and the required LiveFlow feature. It includes that dependency; #12 remains open and overlapping. Jenkins reads reject insecure remote URLs and redirects, and CLI stderr is withheld from browser warnings. Promtool exercises application/resource/restart/rollout alert expressions with synthetic series; this is distinct from triggering real host-pressure alerts.
