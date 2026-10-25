@@ -292,3 +292,24 @@ The default chart runs a small lab. The production profile requires an approved 
 Terraform and Ansible deliberately remain a **single-node lab**. They are not a production cluster or a free-cost guarantee. EC2, storage and public IPv4 may be billed.
 
 Start with [the walkthrough](docs/start-here.md), [toolkit commands](docs/toolkit.md), [setup](docs/setup.md), [design decisions](docs/decisions.md), [runbook](docs/runbook.md), [learning](docs/learning.md), and [review findings](docs/review.md). [Deployment notes](docs/readiness.md) list the evidence still needed before production use.
+
+
+## Optional five-project incident integration
+
+The existing LiveFlow topology viewer now accepts optional read-only Kubernetes events, Helm releases, Argo Application CRs and Ops Pilot incidents. A disconnected source is explicit and no Kubernetes cluster is needed to open the dashboard. The toolkit's existing diagnostics remain authoritative; the viewer cannot approve or execute repairs. [Integration, monitoring profiles, credentials, resources and verification](docs/ECOSYSTEM.md). An opt-in monitoring configuration reuses Prometheus/Grafana with Alertmanager routing; Grafana is a viewer/alerting UI, not a log database.
+
+Integration evidence: [source/concurrency tests](https://github.com/Vishnu063/devops_platform/actions/runs/40074262896), toolkit/docs checks, and the [real read-only incident view in shared recovery CI](https://github.com/Vishnu063/ops-pilot/actions/runs/40074300156). Live cluster/Argo/Helm/Grafana and host-resource alert triggers remain explicitly unverified. [Five-project architecture/results and source refs](https://github.com/Vishnu063/ops-pilot/blob/feat/unified-devops-engineer/docs/ECOSYSTEM-RESULTS.md).
+
+```mermaid
+flowchart LR
+  K[Optional Kubernetes / Helm / Argo reads] --> L[LiveFlow topology]
+  O[Ops Pilot read-only incident API] --> L
+  M[Existing application / host metrics] --> P[Optional Prometheus + Grafana]
+  P --> A[Authenticated alerts to Ops Pilot]
+```
+
+
+## Self-hosted integration review (2026-10-25)
+
+[Ops Pilot setup and read-only permission guide](https://github.com/Vishnu063/ops-pilot/blob/feat/public-selfhosted-readiness/docs/SELF-HOSTING.md) · [Current cross-project readiness and actual evidence](https://github.com/Vishnu063/ops-pilot/blob/feat/public-selfhosted-readiness/docs/PUBLIC-READINESS.md).
+PR #13 now targets main after a normal two-parent merge preserving current main and the required LiveFlow feature. It includes that dependency; #12 remains open and overlapping. Jenkins reads reject insecure remote URLs and redirects, and CLI stderr is withheld from browser warnings. Promtool exercises application/resource/restart/rollout alert expressions with synthetic series; this is distinct from triggering real host-pressure alerts.

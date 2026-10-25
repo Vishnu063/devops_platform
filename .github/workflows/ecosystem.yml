@@ -1,0 +1,23 @@
+name: Optional ecosystem sources
+on:
+  push:
+    branches: [feat/unified-devops-engineer]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  readonly:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -p test_ecosystem_sources.py -v
+      - run: python -m compileall -q liveflow
+  monitoring-rules:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Evaluate actual alert expressions with synthetic metric series
+        run: docker run --rm --entrypoint /bin/promtool --mount "type=bind,src=$GITHUB_WORKSPACE/monitoring/ecosystem,dst=/rules,readonly" -w /rules prom/prometheus:v3.7.0 test rules rule-tests.yml

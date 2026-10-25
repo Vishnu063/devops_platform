@@ -1,0 +1,35 @@
+groups:
+  - name: ecosystem
+    rules:
+      - alert: EcosystemApplicationDown
+        expr: probe_success{job="ecosystem-app"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: ecosystem-demo
+        annotations:
+          summary: Configured application HTTP readiness probe failed
+      - alert: EcosystemRepeatedRestarts
+        expr: changes(container_start_time_seconds{container_label_io_ops_pilot_service="ecosystem-demo"}[10m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: ecosystem-demo
+      - alert: EcosystemMemoryPressure
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          service: ecosystem-demo
+      - alert: EcosystemCPUPressure
+        expr: 1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: ecosystem-demo
+      - alert: EcosystemRolloutUnavailable
+        expr: kube_deployment_spec_replicas - kube_deployment_status_replicas_available > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: ecosystem-demo
